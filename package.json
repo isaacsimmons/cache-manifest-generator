@@ -12,7 +12,8 @@
     "url": "https://github.com/isaacsimmons/cache-manifest-middleware/issues"
   },
   "dependencies": {
-    "watchr": "2.x"
+    "watchr": "2.x",
+    "scandirectory": "2.x"
   },
   "license": "MIT"
 }

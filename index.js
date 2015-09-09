@@ -1,9 +1,10 @@
 'use strict';
 
-var path   = require('path');
-var fs     = require('fs');
+var path    = require('path');
+var fs      = require('fs');
 
-var watchr = require('watchr');
+var watchr  = require('watchr');
+var scanner = require('scandirectory');
 
 function locationOf(val, arr, start, end) {
   start = start || 0;
