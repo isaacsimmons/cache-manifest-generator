@@ -4,8 +4,10 @@ var path    = require('path');
 var fs      = require('fs');
 
 var watchr  = require('watchr');
-var scanner = require('scandirectory');
+var scanner = require('scandirectory');  //TODO: look at other recursive scan options
 
+
+//Helpers for dealing with sorted arrays
 function locationOf(val, arr, start, end) {
   start = start || 0;
   end = end || arr.length;
@@ -29,76 +31,96 @@ function remove(val, arr) {
   }
 }
 
-function serveManifest(paths) {
-  //TODO: get rid of my hardcoded paths in here
-  //TODO: if paths is an array, transform it into an object
-  //TODO: if paths is a string, transform it into an array
+//Paths = array of paths to watch for changes
+//Each path is an object with a "file" property and any of the following optional properties: url, ignore, recurse, rewrite
+
+
+function serveManifest() {
+  var i, len;
+
+  //Parse arguments, apply defaults
+  var paths = [];
+  var opts = {};
+
+  for(i = 0, len = arguments.length; i < len; i++) {
+    var arg = arguments[i];
+    if (typeof arg === 'string') {
+      arg = { file: arg, url: arg };
+    }
+
+    if (i === (len - 1) && !'file' in arg) {
+      opts = arg;
+    } else {
+      if (! 'url' in arg) {
+        arg['url'] = arg['file'];
+      }
+      paths.push(arg);
+    }
+  }
 
   var allFiles = [];
   var manifestVersion = new Date().toISOString();
-  var pendingScans = 0;
 
-  function updateFileList(evt, filePath) {
-    var s = filePath.split(path.sep);
-    var location = s.slice(0, -1).join('/');
-    var filename = s[s.length - 1];
-    //Convert file path to url path if we have a known mapping
-    if (location in paths) {
-      location = paths[location];
+  function usePath(path) {
+    var filePath = path['file'];
+    var urlPath = path['url'] || path['file'];
+    //TODO: prepend a / on urlPath if missing?
+
+    function updateFileList(evt, filePath) {
+      var s = filePath.split(path.sep);
+
+      //TODO: this slice isn't sufficient if I start recursing on subdirectories
+      var location = s.slice(0, -1).join('/');
+      var filename = s[s.length - 1];
+      //Convert file path to url path if we have a known mapping
+
+      var url = '/' + urlPath + '/' + filename;
+      if (evt === 'delete') {
+        remove(url, allFiles);
+      } else if (evt === 'create') {
+        insert(url, allFiles);
+      }
+      manifestVersion = new Date().toISOString();
+      console.log('cache updated');
     }
 
-    var urlPath = '/' + location + '/' + filename;
-    if (evt === 'delete') {
-      sortedArray.remove(urlPath, allFiles);
-    } else if (evt === 'create') {
-      sortedArray.insert(urlPath, allFiles);
-    }
-    manifestVersion = new Date().toISOString();
-    console.log('cache updated');
-  }
-
-  function scanFiles(dir) {
-    pendingScans++;
-    fs.readdir(dir, function (err, files) {
+    fs.readdir(filePath, function (err, files) {
       //TODO: handle error here
       //TODO: what if I pass in files instead of directories?
-      pendingScans--;
+      //TODO: recurse on subdirectories?
+      //TODO: ignore patterns?
       for (var i = 0, len = files.length; i < len; i++) {
         var filename = files[i];
         if (filename[0] !== '.') {
-          //translate local relative path to url path before adding
-          allFiles.push('/' + paths[dir] + '/' + filename);
+          //translate filePath to urlPath before adding
+          allFiles.push('/' + urlPath + '/' + filename);
         }
       }
-      if (pendingScans <= 0) {
-        allFiles.sort();
+      allFiles.sort();
 
-        //Start watching those directories and files for changes
-        watchr.watch({
-          paths: ['js', 'site/css', 'site/html', 'site/img'], //TODO: add lists.json to this if we decide to include it in the manifest
-          listener: function (evt, path) {
-            if (evt === 'delete' || evt === 'create') {
-              updateFileList(evt, path);
-            } else if (evt === 'update') {
-              console.log('cache updated');
-              manifestVersion = new Date().toISOString();
-            }
-          },
-          catchupDelay: 500
-        });
-        console.log('cache updated');
-      }
+      //Start watching those directories and files for changes
+      watchr.watch({
+        paths: [ filePath ],
+        listener: function (evt, path) {
+          if (evt === 'delete' || evt === 'create') {
+            updateFileList(evt, path);
+          } else if (evt === 'update') {
+            console.log('cache updated');
+            manifestVersion = new Date().toISOString();
+          }
+        },
+        catchupDelay: 500
+      });
+      console.log('cache updated');
     });
   }
 
   //Initialize the list of cache.manifest files
-  scanFiles('site/css');
-  scanFiles('site/html');
-  scanFiles('site/img');
-  scanFiles('js');
+  for(i = 0, len = paths.length; i < len; i++) {
+    usePath(paths[i]);
+  }
 
   return function(req, res) {
-    //TODO: a method to write this to disk somewhere for when not using the dev server?
     //TODO: take a template of some kind?
     res.set('Cache-Control', 'no-cache');
     res.set('Content-Type', 'text/cache-manifest');
