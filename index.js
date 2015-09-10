@@ -114,10 +114,12 @@ function serveManifest(paths) {
   }
 }
 
+function nocache(req, res, next) {
+  res.setHeader('Cache-Control', 'no-cache');
+  next();
+}
+
 module.exports = {
-  nocache: function (req, res, next){
-    res.setHeader('Cache-Control', 'no-cache');
-    next();
-  },
-  serveManifest: serveManifest
+  nocache: nocache,
+  generator: serveManifest
 };
