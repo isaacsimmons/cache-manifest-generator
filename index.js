@@ -59,6 +59,9 @@ function serveManifest() {
   var manifestVersion = new Date().toISOString();
 
   function usePath(path) {
+    if (! 'file' in path) {
+      throw new Error('Path object must contain a "file" property');
+    }
     var filePath = path['file'];
     var urlPath = path['url'] || path['file'];
     //TODO: prepend a / on urlPath if missing?
