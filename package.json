@@ -15,5 +15,6 @@
     "watchr": "2.x",
     "scandirectory": "2.x"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": [ "HTML5", "cache", "manifest", "appcache", "express", "connect" ]
 }
