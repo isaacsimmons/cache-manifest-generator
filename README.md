@@ -10,7 +10,21 @@ During development, you may also want to use some manner of application cache mo
 
 ## Installation ##
 
+    npm install cache-manifest-middleware
+
 ## Usage ##
+
+    var express = require('express');
+    var manifest = require('cache-manifest-middleware');
+
+    var app = express();
+
+    app.use(manifest.nocache);
+    app.get('/cache.manifest', manifest.generator('site');
+
+    app.use(express.static('site'));
+
+    app.listen(8000);
 
 ## License ##
 
