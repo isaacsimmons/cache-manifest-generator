@@ -51,9 +51,6 @@ function serveManifest() {
     if (i === (len - 1) && !'file' in arg) {
       opts = arg;
     } else {
-      if (! 'url' in arg) {
-        arg['url'] = arg['file'];
-      }
       paths.push(arg);
     }
   }
