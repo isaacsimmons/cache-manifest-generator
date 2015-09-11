@@ -1,5 +1,7 @@
 'use strict';
 
+//TODO: on initial scan, check for the latest timestamp so that re-initialization of the server doesn't needlessly bump the cache.manifest version?
+
 var path    = require('path');
 var fs      = require('fs');
 
@@ -21,11 +23,12 @@ function locationOf(val, arr, start, end) {
 }
 
 function insert(val, arr) {
+  //TODO: prevent duplicate insertions?
   arr.splice(locationOf(val, arr) + 1, 0, val);
 }
 
 function remove(val, arr) {
-  var index = arr.indexOf(val);
+  var index = arr.indexOf(val); //TODO: use locationOf here but guard against deleting non-present members?
   if (index > -1) {
     arr.splice(index, 1);
   }
@@ -33,8 +36,7 @@ function remove(val, arr) {
 
 //Paths = array of paths to watch for changes
 //Each path is an object with a "file" property and any of the following optional properties: url, ignore, recurse, rewrite
-
-
+//Last argument can optionally be an "options" object
 function serveManifest() {
   var i, len;
 
@@ -121,7 +123,7 @@ function serveManifest() {
   }
 
   return function(req, res) {
-    //TODO: take a template of some kind?
+    //TODO: take a template of some kind? (nah, just read network/fallback/etc from opts
     res.set('Cache-Control', 'no-cache');
     res.set('Content-Type', 'text/cache-manifest');
     res.write('CACHE MANIFEST\n');
