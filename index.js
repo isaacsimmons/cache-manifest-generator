@@ -60,61 +60,79 @@ function serveManifest() {
   var allFiles = [];
   var manifestVersion = new Date().toISOString();
 
-  function usePath(path) {
-    if (! 'file' in path) {
+  function usePath(p) {
+    if (! 'file' in p) {
       throw new Error('Path object must contain a "file" property');
     }
-    var filePath = path['file'];
-    var urlPath = path['url'] || path['file'];
+    var filePath = p['file'];
+    var urlPath = p['url'] || p['file'];
+
+    filePath = path.format(path.parse(filePath));
     //TODO: prepend a / on urlPath if missing?
+    //TODO: maybe turn all paths into absolute ones?
 
-    function updateFileList(evt, filePath) {
-      var s = filePath.split(path.sep);
-
-      //TODO: this slice isn't sufficient if I start recursing on subdirectories
-      var location = s.slice(0, -1).join('/');
-      var filename = s[s.length - 1];
-      //Convert file path to url path if we have a known mapping
-
-      var url = '/' + urlPath + '/' + filename;
-      if (evt === 'delete') {
-        remove(url, allFiles);
-      } else if (evt === 'create') {
-        insert(url, allFiles);
+    function toUrl(orig) {
+      console.log('converting ' + orig);
+      var relPath = orig.substr(filePath.length);
+      if (relPath.startsWith(path.sep)) {
+        relPath = relPath.substr(path.sep.length);
       }
-      manifestVersion = new Date().toISOString();
-      console.log('cache updated');
+      return '/' + urlPath + '/' + path.posix.format(path.parse(relPath));
+      //TODO: need to convert to /'s for URL
+      //return '/' +  urlPath + '/' + orig.substr(filePath.length);
+      //TODO: will this work for the case where the whole path is a single file instead of a directory?
     }
 
-    fs.readdir(filePath, function (err, files) {
-      //TODO: handle error here
-      //TODO: what if I pass in files instead of directories?
-      //TODO: recurse on subdirectories?
-      //TODO: ignore patterns?
-      for (var i = 0, len = files.length; i < len; i++) {
-        var filename = files[i];
-        if (filename[0] !== '.') {
-          //translate filePath to urlPath before adding
-          allFiles.push('/' + urlPath + '/' + filename);
-        }
+    function listener(evt, evtPath) {
+      console.log('listen event for ' + evtPath);
+      if (! evtPath.startsWith(filePath)) {
+        throw new Error('!!!!!!!!!!!!');
       }
-      allFiles.sort();
-
-      //Start watching those directories and files for changes
-      watchr.watch({
-        paths: [ filePath ],
-        listener: function (evt, path) {
-          if (evt === 'delete' || evt === 'create') {
-            updateFileList(evt, path);
-          } else if (evt === 'update') {
-            console.log('cache updated');
-            manifestVersion = new Date().toISOString();
+      fs.stat(evtPath, function(err, stat) {
+        if (stat.isFile()) {
+          var url = toUrl(evtPath);
+          if (evt === 'delete') {
+            remove(url, allFiles);
+          } else if (evt === 'create') {
+            insert(url, allFiles);
           }
-        },
-        catchupDelay: 500
+          manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
+          console.log('cache updated');
+        }
       });
-      console.log('cache updated');
+    }
+
+    fs.stat(filePath, function(err, stat) {
+      //TODO: keep track of the max 'mtime' (and maybe drop to second-level accuracy)
+      if (stat.isDirectory()) {
+        scanner.scandir(filePath, {
+          fileAction: function(filePath, filename, next, stat) {
+            console.log('scanned file at ' + filePath);
+            insert(toUrl(filePath), allFiles);
+            next();
+          }
+        });
+      } else { //!isDirectory
+        insert(urlPath, allFiles);
+      }
+
+      console.log('gonna watch ' + filePath);
+      watchr.watch({
+        path: filePath,
+        listener: listener,
+        catchupDelay: 500  //TODO: pass in my stat object for re-use?
+      });
     });
+
+    //
+    //  //Start watching those directories and files for changes
+    //  watchr.watch({
+    //    path: filePath,
+    //    listener: listener,
+    //    catchupDelay: 500
+    //  });
+    //  console.log('cache updated');
+    //});
   }
 
   //Initialize the list of cache.manifest files
