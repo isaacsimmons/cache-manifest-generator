@@ -113,10 +113,14 @@ var CONFIG = [{
   }, {
     file: 'test_files/more_files',
     url: 'test_files/more_files'
+  }, {
+    file: 'test_files/hello.txt',
+    url: 'hello.txt'
   }
 ];
 
 var INITIAL_FILES = [
+  'test_files/hello.txt',
   'test_files/some_files/a.txt',
   'test_files/some_files/b.txt',
   'test_files/some_files/nested/x.txt',
@@ -126,6 +130,7 @@ var INITIAL_FILES = [
 ];
 
 var INITIAL_URLS = [
+  '/hello.txt',
   '/some/a.txt',
   '/some/b.txt',
   '/some/nested/x.txt',
