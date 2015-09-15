@@ -6,7 +6,7 @@ var path    = require('path');
 var fs      = require('fs');
 
 var watchr  = require('watchr');
-var scanner = require('scandirectory');  //TODO: look at other recursive scan options
+var scanner = require('scandirectory');
 
 function sortedSet() {
   var arr = [];
