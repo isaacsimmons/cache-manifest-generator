@@ -42,9 +42,32 @@ function serveManifest() {
 
   //Parse arguments, apply defaults
   var paths = [];
-  var opts = {};
+  var opts, callback;
 
-  for(i = 0, len = arguments.length; i < len; i++) {
+  var numPaths = arguments.length;
+  if (numPaths === 0) {
+    throw new Error("Must provide at least one path to watch");
+  }
+  if (typeof arguments[numPaths - 1] === "function") {
+    callback = arguments[numPaths - 1];
+    numPaths--;
+    if (numPaths === 0) {
+      throw new Error("Must provide at least one path to watch");
+    }
+  } else {
+    callback = function() {};
+  }
+  if (typeof arguments[numPaths - 1] === 'object' && ! ('file' in arguments[numPaths - 1])) {
+    opts = arguments[numPaths - 1];
+    numPaths--;
+    if (numPaths === 0) {
+      throw new Error("Must provide at least one path to watch");
+    }
+  } else {
+    opts = {};
+  }
+
+  for(i = 0; i < numPaths; i++) {
     var arg = arguments[i];
     if (typeof arg === 'string') {
       arg = { file: arg, url: arg };
@@ -58,17 +81,21 @@ function serveManifest() {
   }
 
   var allFiles = [];
+  var pendingScans = 0;
   var manifestVersion = new Date().toISOString();
 
   function usePath(p) {
-    if (! 'file' in p) {
+    if (! ('file' in p)) {
       throw new Error('Path object must contain a "file" property');
     }
+    pendingScans++;
     var filePath = p['file'];
     var urlPath = p['url'] || p['file'];
+    if (! urlPath.startsWith('/')) {
+      urlPath = '/' + urlPath;
+    }
 
     filePath = path.format(path.parse(filePath));
-    //TODO: prepend a / on urlPath if missing?
     //TODO: maybe turn all paths into absolute ones?
 
     function toUrl(orig) {
@@ -77,9 +104,8 @@ function serveManifest() {
       if (relPath.startsWith(path.sep)) {
         relPath = relPath.substr(path.sep.length);
       }
-      return '/' + urlPath + '/' + path.posix.format(path.parse(relPath));
-      //TODO: need to convert to /'s for URL
-      //return '/' +  urlPath + '/' + orig.substr(filePath.length);
+      //Convert to /'s for URL in case the filePath has \ separators
+      return urlPath + '/' + path.posix.format(path.parse(relPath));
       //TODO: will this work for the case where the whole path is a single file instead of a directory?
     }
 
@@ -110,18 +136,29 @@ function serveManifest() {
             console.log('scanned file at ' + filePath);
             insert(toUrl(filePath), allFiles);
             next();
+          },
+          next: function() {
+            pendingScans--;
+            if (pendingScans <= 0) {
+              callback(serveResponse);
+            }
           }
         });
       } else { //!isDirectory
         insert(urlPath, allFiles);
+        pendingScans--;
+        if (pendingScans <= 0) {
+          callback(serveResponse);
+        }
       }
 
       console.log('gonna watch ' + filePath);
       watchr.watch({
         path: filePath,
         listener: listener,
-        catchupDelay: 500  //TODO: pass in my stat object for re-use?
+        catchupDelay: 500
       });
+
     });
 
     //
@@ -140,7 +177,7 @@ function serveManifest() {
     usePath(paths[i]);
   }
 
-  return function(req, res) {
+  function serveResponse(req, res) {
     //TODO: take a template of some kind? (nah, just read network/fallback/etc from opts
     res.set('Cache-Control', 'no-cache');
     res.set('Content-Type', 'text/cache-manifest');
@@ -154,6 +191,12 @@ function serveManifest() {
     res.write('#Updated: ' + manifestVersion);
     res.end();
   }
+
+  serveResponse['stop'] = function() {
+    console.log('STOP');
+  };
+
+  return serveResponse;
 }
 
 function nocache(req, res, next) {
