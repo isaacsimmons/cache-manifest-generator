@@ -16,5 +16,12 @@
     "scandirectory": "2.x"
   },
   "license": "MIT",
-  "keywords": [ "HTML5", "cache", "manifest", "appcache", "express", "connect" ]
+  "keywords": [
+    "HTML5",
+    "cache",
+    "manifest",
+    "appcache",
+    "express",
+    "connect"
+  ]
 }
