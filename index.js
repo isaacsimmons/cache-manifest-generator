@@ -120,6 +120,7 @@ function serveManifest(paths, opts, callback) {
     }
 
     fs.stat(filePath, function(err, stat) {
+      if (err) { throw err; }
       //TODO: keep track of the max 'mtime' (and maybe drop to second-level accuracy)
       if (stat.isDirectory()) {
         scanner.scandir(filePath, {
