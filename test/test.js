@@ -83,7 +83,6 @@ function getManifest(server, callback) {
       assert('COMMENT' in manifest, 'Comment expected in manifest');
       assert('CACHE' in manifest, 'Cache expected in manifest');
       assert('NETWORK' in manifest, 'Network section expected in manifest');
-      assert.deepEqual(manifest['NETWORK'], ['*'], 'Network section doesn\'t hold expected value'); //TODO: pull this from opts
       assert.deepEqual(manifest['CACHE'].slice().sort(), manifest['CACHE'], 'Cache entries should be soted');
 
       callback(null, manifest);
@@ -188,14 +187,18 @@ describe('Check initial data', function() {
       getManifest(server, function(err, manifest) {
         if (err) {
           done(err);
+          server.stop();
           return;
         }
         try {
           console.log('CACHE is ' + JSON.stringify(manifest['CACHE']));
-          server.stop();
+          assert.deepEqual(manifest['NETWORK'], ['*'], 'Network section doesn\'t hold expected value'); //TODO: pull this from opts
+          assert.deepEqual(manifest['CACHE'], INITIAL_URLS, 'Cache section doesn\'t hold expected value(s)');
           done();
         } catch (err) {
           done(err);
+        } finally {
+          server.stop();
         }
       });
     });
