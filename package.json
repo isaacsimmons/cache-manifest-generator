@@ -1,7 +1,7 @@
 {
   "name": "cache-manifest-middleware",
   "description": "Dynamic cache.manifest generation connect middleware plugin",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "author": "Isaac Simmons <isaac.simmons@gmail.com>",
   "homepage": "https://github.com/isaacsimmons/cache-manifest-middleware",
   "repository": {
