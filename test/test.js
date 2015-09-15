@@ -1,33 +1,13 @@
 'use strict';
 
+var assert = require("assert");
+var middleware = require('../index.js');
+
 var CONFIG = {
   file: 'test'
 };
 
-var middleware = require('../index.js');
-
-var lastTimestamp = null;
-
-function addFile(path) {
-
-}
-
-function touchFile(path) {
-
-}
-
-function delFile(path) {
-
-}
-
-function addDir(path) {
-
-}
-
-function rmDir(path) {
-
-}
-
+//Helper Functions
 function fakeReq(server, callback) {
   var headers = [];
   var buf = [];
@@ -50,6 +30,25 @@ function fakeReq(server, callback) {
   });
 }
 
+function addFile(path) {
+
+}
+
+function touchFile(path) {
+
+}
+
+function delFile(path) {
+
+}
+
+function addDir(path) {
+
+}
+
+function rmDir(path) {
+
+}
 
 function assertInManifest(server, line) {
 
@@ -72,9 +71,13 @@ function assertManifestNotChanged(server) {
 
 }
 
-
-middleware.generator(CONFIG, function(server) {
-  getManifestComment(server);
-  server.stop();
+//Tests
+describe('Initial Scan', function() {
+  it('should initialize properly', function (done) {
+    middleware.generator(CONFIG, function(server) {
+      //getManifestComment(server);
+      server.stop();
+      done();
+    });
+  });
 });
-

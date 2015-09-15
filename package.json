@@ -15,6 +15,12 @@
     "watchr": "2.x",
     "scandirectory": "2.x"
   },
+  "devDependencies": {
+    "mocha": "^2.3.2"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
   "license": "MIT",
   "keywords": [
     "HTML5",
