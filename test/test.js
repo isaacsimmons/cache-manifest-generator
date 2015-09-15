@@ -5,16 +5,24 @@ var fs = require('fs');
 var middleware = require('../index.js');
 
 //Helper Functions
-function fakeReq(server, callback) {
-  var headers = [];
+function getManifest(server, callback) {
   var buf = [];
+  var ccHeader = null;
+  var ctHeader = null;
 
-  server(null, {
+  var mockResponse = {
     end: function(s) {
       if (typeof s === 'string') {
         buf.push(s);
       }
-      callback(headers, buf.join(''));
+      try {
+        assert.equal(ccHeader, 'no-cache', 'Cache-Control header should be no-cache');
+        assert.equal(ctHeader, 'text/cache-manifest', 'Content-Type header should be text/cache-manifest');
+        var manifest = parseManifest(buf.join(''));
+        callback(null, manifest);
+      } catch(err) {
+        callback(err);
+      }
     },
     write: function(s) {
       if (typeof s === 'string') {
@@ -22,64 +30,48 @@ function fakeReq(server, callback) {
       }
     },
     set: function(name, value) {
-      headers.push({name: name, value: value});
+      if (name === 'Cache-Control') {
+        ccHeader = value;
+      } else if (name === 'Content-Type') {
+        ctHeader = value;
+      }
     }
-  });
+  };
+
+  server(null, mockResponse);
 }
 
-function getManifest(server, callback) {
-  fakeReq(server, function(headers, body) {
-    try {
-      var i;
-      var ccHeader = false;
-      var ctHeader = false;
-      for(i = 0; i < headers.length; i++) {
-        var header = headers[i];
-        if (header['name'] === 'Cache-Control') {
-          assert.equal(header['value'], 'no-cache', 'Cache-Control header should be set to no-cache');
-          ccHeader = true;
-        } else if (header['name'] === 'Content-Type') {
-          assert.equal(header['value'], 'text/cache-manifest', 'Content-Type header should be set to text/cache-manifest');
-          ctHeader = true;
-        }
+function parseManifest(body) {
+  var manifest = { CACHE: [], COMMENTS: [] };
+  var lines = body.split('\n');
+  assert.equal(lines[0], 'CACHE MANIFEST', 'First line should be CACHE MANIFEST');
+  var section = 'CACHE';
+  for (var i = 1; i < lines.length; i++) {
+    var line = lines[i];
+    assert.equal(line.trim(), line, 'No extra whitespace expected in cache manifest');
+    if (line.length === 0) {
+      //Blank line
+      section = null;
+    } else if (line.startsWith('#')) {
+      //Comment
+      manifest['COMMENTS'].push(line.substr(1));
+    } else if (section === null) {
+      //New section header
+      assert(line.endsWith(':'), 'Cache section lines should end with :');
+      section = line.substr(0, line.length - 1);
+      if (section !== 'CACHE') {
+        assert(!(section in manifest), 'Multiple copies of section header ' + section + ' found in manifest');
+        manifest[section] = [];
       }
-      assert(ccHeader, 'No Cache-Control header found');
-      assert(ctHeader, 'No Content-Type header found');
-
-      var manifest = { CACHE: [], COMMENT: [] };
-      var lines = body.split('\n');
-      assert.equal(lines[0], 'CACHE MANIFEST', 'First line of manifest should be CACHE MANIFEST');
-      var section = 'CACHE';
-      for (i = 1; i < lines.length; i++) {
-        var line = lines[i];
-        assert.equal(line.trim(), line, 'No extra whitespace expected on cache manifest lines');
-        if (line.length === 0) {
-          //Blank line
-          section = null;
-        } else if (line.startsWith('#')) {
-          //Comment
-          manifest['COMMENT'].push(line.substr(1));
-        } else if (section === null) {
-          //New section header
-          assert(line.endsWith(':'), 'Cache section lines should end with :');
-          section = line.substr(0, line.length - 1);
-          if (section !== 'CACHE') {
-            assert(!(section in manifest), 'Multiple copies of section header ' + section + ' found in manifest');
-            manifest[section] = [];
-          }
-        } else {
-          //Inside of an existing section
-          manifest[section].push(line);
-        }
-      }
-
-      assert.deepEqual(manifest['CACHE'].slice().sort(), manifest['CACHE'], 'Cache entries should be soted');
-
-      callback(null, manifest);
-    } catch (err) {
-      callback(err);
+    } else {
+      //Inside of an existing section
+      manifest[section].push(line);
     }
-  });
+  }
+
+  assert.deepEqual(manifest['CACHE'].slice().sort(), manifest['CACHE'], 'Cache entries should be soted');
+
+  return manifest;
 }
 
 function addFile(path) {
