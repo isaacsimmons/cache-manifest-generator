@@ -8,30 +8,41 @@ var fs      = require('fs');
 var watchr  = require('watchr');
 var scanner = require('scandirectory');  //TODO: look at other recursive scan options
 
+function sortedSet() {
+  var arr = [];
 
-//Helpers for dealing with sorted arrays
-function locationOf(val, arr, start, end) {
-  start = start || 0;
-  end = end || arr.length;
-  var pivot = parseInt(start + (end - start) / 2, 10);
-  if (end - start <= 1 || arr[pivot] === val) return pivot;
-  if (arr[pivot] < val) {
-    return locationOf(val, arr, pivot, end);
-  } else {
-    return locationOf(val, arr, start, pivot);
+  function indexOf(val) {
+    var min = 0, max = arr.length - 1;
+    while (min <= max) {
+      var cur = (min + max) / 2 | 0;
+      if (arr[cur] < val) {
+        min = cur + 1;
+      } else if (arr[cur] > val) {
+        max = cur - 1;
+      } else {
+        return cur;
+      }
+    }
+    return ~max;
   }
-}
 
-function insert(val, arr) {
-  //TODO: prevent duplicate insertions?
-  arr.splice(locationOf(val, arr) + 1, 0, val);
-}
+  arr.insert = function(val) {
+    var index = Math.abs(indexOf(val));
+    if (arr.length <= index || arr[index] !== val) {
+      arr.splice(index, 0, val);
+    }
+    return arr;
+  };
 
-function remove(val, arr) {
-  var index = arr.indexOf(val); //TODO: use locationOf here but guard against deleting non-present members?
-  if (index > -1) {
-    arr.splice(index, 1);
-  }
+  arr.remove = function(val) {
+    var index = indexOf(val);
+    if (index >= 0 && arr[index] === val) {
+      arr.splice(index, 1);
+    }
+    return arr;
+  };
+
+  return arr;
 }
 
 //Paths = array of paths to watch for changes
@@ -52,7 +63,7 @@ function serveManifest(paths, opts, callback) {
   }
 
   var watchers = [];
-  var allFiles = [];
+  var allFiles = sortedSet();
   var completedScans = 0;
   var manifestVersion = new Date().toISOString();
 
@@ -79,7 +90,7 @@ function serveManifest(paths, opts, callback) {
     //TODO: maybe turn all paths into absolute ones?
 
     function toUrl(orig) {
-      console.log('converting ' + orig);
+      //console.log('converting ' + orig);
       var relPath = orig.substr(filePath.length);
       if (relPath.startsWith(path.sep)) {
         relPath = relPath.substr(path.sep.length);
@@ -98,9 +109,9 @@ function serveManifest(paths, opts, callback) {
         if (stat.isFile()) {
           var url = toUrl(evtPath);
           if (evt === 'delete') {
-            remove(url, allFiles);
+            allFiles.remove(url);
           } else if (evt === 'create') {
-            insert(url, allFiles);
+            allFiles.insert(url);
           }
           manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
           console.log('cache updated');
@@ -113,8 +124,7 @@ function serveManifest(paths, opts, callback) {
       if (stat.isDirectory()) {
         scanner.scandir(filePath, {
           fileAction: function(filePath, filename, next, stat) {
-            console.log('scanned file at ' + filePath);
-            insert(toUrl(filePath), allFiles);
+            allFiles.insert(toUrl(filePath));
             next();
           },
           next: function() {
@@ -123,7 +133,7 @@ function serveManifest(paths, opts, callback) {
           }
         });
       } else { //!isDirectory
-        insert(urlPath, allFiles);
+        allFiles.insert(urlPath);
         completedScans++;
         checkReady();
       }
