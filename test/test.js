@@ -5,7 +5,7 @@ var fs = require('fs');
 var middleware = require('../index.js');
 
 //Helper Functions
-function fakeReq(server, callback) { //TODO: use err, stuff node style callback
+function fakeReq(server, callback) {
   var headers = [];
   var buf = [];
 
@@ -27,7 +27,7 @@ function fakeReq(server, callback) { //TODO: use err, stuff node style callback
   });
 }
 
-function getManifest(server, callback, done) {
+function getManifest(server, callback) {
   fakeReq(server, function(headers, body) {
     try {
       var i;
@@ -86,9 +86,9 @@ function getManifest(server, callback, done) {
       assert.deepEqual(manifest['NETWORK'], ['*'], 'Network section doesn\'t hold expected value'); //TODO: pull this from opts
       assert.deepEqual(manifest['CACHE'].slice().sort(), manifest['CACHE'], 'Cache entries should be soted');
 
-      callback(manifest);
+      callback(null, manifest);
     } catch (err) {
-      done(err);
+      callback(err);
     }
   });
 }
@@ -199,9 +199,13 @@ describe('Check filesystem', function() {
 });
 
 describe('Check initial data', function() {
-  it('should contain expected elements', function (done) {
+  it('Should contain expected elements', function (done) {
     middleware.generator(CONFIG, null, function(server) {
-      getManifest(server, function(manifest) {
+      getManifest(server, function(err, manifest) {
+        if (err) {
+          done(err);
+          return;
+        }
         try {
           console.log('CACHE is ' + JSON.stringify(manifest['CACHE']));
           server.stop();
@@ -209,7 +213,7 @@ describe('Check initial data', function() {
         } catch (err) {
           done(err);
         }
-      }, done);
+      });
     });
   });
 });
