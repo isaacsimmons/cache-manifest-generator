@@ -1,6 +1,8 @@
 'use strict';
 
-var config
+var CONFIG = {
+  file: 'test'
+};
 
 var middleware = require('../index.js');
 
@@ -71,7 +73,7 @@ function assertManifestNotChanged(server) {
 }
 
 
-middleware.generator('test', function(server) {
+middleware.generator(CONFIG, function(server) {
   getManifestComment(server);
   server.stop();
 });
