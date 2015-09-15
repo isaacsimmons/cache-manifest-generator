@@ -80,15 +80,21 @@ function serveManifest() {
     }
   }
 
+  var watchers = [];
   var allFiles = [];
-  var pendingScans = 0;
+  var completedScans = 0;
   var manifestVersion = new Date().toISOString();
+
+  function checkReady() {
+    if (completedScans === numPaths && watchers.length === numPaths) {
+      callback(serveResponse);
+    }
+  }
 
   function usePath(p) {
     if (! ('file' in p)) {
       throw new Error('Path object must contain a "file" property');
     }
-    pendingScans++;
     var filePath = p['file'];
     var urlPath = p['url'] || p['file'];
     if (! urlPath.startsWith('/')) {
@@ -138,42 +144,31 @@ function serveManifest() {
             next();
           },
           next: function() {
-            pendingScans--;
-            if (pendingScans <= 0) {
-              callback(serveResponse);
-            }
+            completedScans++;
+            checkReady();
           }
         });
       } else { //!isDirectory
         insert(urlPath, allFiles);
-        pendingScans--;
-        if (pendingScans <= 0) {
-          callback(serveResponse);
-        }
+        completedScans++;
+        checkReady();
       }
 
       console.log('gonna watch ' + filePath);
       watchr.watch({
         path: filePath,
         listener: listener,
+        next: function(err, watcher) {
+          watchers.push(watcher);
+          checkReady();
+        },
         catchupDelay: 500
       });
-
     });
-
-    //
-    //  //Start watching those directories and files for changes
-    //  watchr.watch({
-    //    path: filePath,
-    //    listener: listener,
-    //    catchupDelay: 500
-    //  });
-    //  console.log('cache updated');
-    //});
   }
 
   //Initialize the list of cache.manifest files
-  for(i = 0, len = paths.length; i < len; i++) {
+  for(i = 0; i < numPaths; i++) {
     usePath(paths[i]);
   }
 
@@ -193,7 +188,11 @@ function serveManifest() {
   }
 
   serveResponse['stop'] = function() {
-    console.log('STOP');
+    console.log('Stopping manifest generator filesystem watches');
+    for (var i = 0, len = watchers.length; i < len; i++) {
+      watchers[i].close();
+    }
+    watchers = [];
   };
 
   return serveResponse;
