@@ -2,6 +2,7 @@
 
 var assert = require("assert");
 var fs = require('fs');
+var path = require('path');
 var middleware = require('../index.js');
 
 //Helper Functions
@@ -106,12 +107,13 @@ function assertManifestNotChanged(server) {
 
 }
 
-var CONFIG = [
-  {
+var CONFIG = [{
     file: 'test_files/some_files',
     url: 'some'
-  },
-  'test_files/more_files'
+  }, {
+    file: 'test_files/more_files',
+    url: 'test_files/more_files'
+  }
 ];
 
 var INITIAL_FILES = [
@@ -173,7 +175,35 @@ describe('Check initial data', function() {
           return;
         }
         try {
-          console.log('CACHE is ' + JSON.stringify(manifest['CACHE']));
+          assert.deepEqual(manifest['NETWORK'], ['*'], 'Network section doesn\'t hold expected value'); //TODO: pull this from opts
+          assert.deepEqual(manifest['CACHE'], INITIAL_URLS, 'Cache section doesn\'t hold expected value(s)');
+          done();
+        } catch (err) {
+          done(err);
+        } finally {
+          server.stop();
+        }
+      });
+    });
+  });
+
+  it('Should contain expected elements with absolute paths', function (done) {
+    var absolutePaths = [];
+    for (var i = 0; i < CONFIG.length; i++) {
+      absolutePaths.push({
+        file: path.resolve(process.cwd(), CONFIG[i]['file']),
+        url: CONFIG[i]['url']
+      });
+    }
+
+    middleware.generator(absolutePaths, null, function(server) {
+      getManifest(server, function(err, manifest) {
+        if (err) {
+          done(err);
+          server.stop();
+          return;
+        }
+        try {
           assert.deepEqual(manifest['NETWORK'], ['*'], 'Network section doesn\'t hold expected value'); //TODO: pull this from opts
           assert.deepEqual(manifest['CACHE'], INITIAL_URLS, 'Cache section doesn\'t hold expected value(s)');
           done();
@@ -186,3 +216,13 @@ describe('Check initial data', function() {
     });
   });
 });
+
+//TODO: observe changes to newly created files
+
+//TODO: notice files added to newly created nested directories
+
+//TODO: observe file additions and modifications to those new files
+
+//TODO: notice file deletions
+
+//folder deletions!
