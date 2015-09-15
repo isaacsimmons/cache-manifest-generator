@@ -46,43 +46,33 @@ function getManifest(server, callback) {
       assert(ccHeader, 'No Cache-Control header found');
       assert(ctHeader, 'No Content-Type header found');
 
-      var manifest = {'CACHE': []};
+      var manifest = { CACHE: [], COMMENT: [] };
       var lines = body.split('\n');
       assert.equal(lines[0], 'CACHE MANIFEST', 'First line of manifest should be CACHE MANIFEST');
       var section = 'CACHE';
       for (i = 1; i < lines.length; i++) {
         var line = lines[i];
         assert.equal(line.trim(), line, 'No extra whitespace expected on cache manifest lines');
-        if (section === null) {
-          assert(line.length !== 0, 'Only one empty line between sections expected');
-
-          if (line.startsWith('#')) {
-            //Comment
-            assert(!('COMMENT' in manifest), 'Only one comment expected in manifest file');
-            manifest['COMMENT'] = line.substr(1);
-          } else {
-            //New section header
-            assert(line.endsWith(':'), 'Cache section lines should end with :');
-            section = line.substr(0, line.length - 1);
+        if (line.length === 0) {
+          //Blank line
+          section = null;
+        } else if (line.startsWith('#')) {
+          //Comment
+          manifest['COMMENT'].push(line.substr(1));
+        } else if (section === null) {
+          //New section header
+          assert(line.endsWith(':'), 'Cache section lines should end with :');
+          section = line.substr(0, line.length - 1);
+          if (section !== 'CACHE') {
             assert(!(section in manifest), 'Multiple copies of section header ' + section + ' found in manifest');
             manifest[section] = [];
           }
         } else {
-          if (line.length > 0) {
-            //Inside of an existing section
-            assert(! line.startsWith('#'), 'Comment expected to be separated from content by blank line');
-            manifest[section].push(line);
-          } else {
-            //Blank line
-            section = null;
-          }
+          //Inside of an existing section
+          manifest[section].push(line);
         }
       }
 
-      //some more asserts. All sections present, network contains exactly the specified lines, etc
-      assert('COMMENT' in manifest, 'Comment expected in manifest');
-      assert('CACHE' in manifest, 'Cache expected in manifest');
-      assert('NETWORK' in manifest, 'Network section expected in manifest');
       assert.deepEqual(manifest['CACHE'].slice().sort(), manifest['CACHE'], 'Cache entries should be soted');
 
       callback(null, manifest);
