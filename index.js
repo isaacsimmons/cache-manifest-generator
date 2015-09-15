@@ -37,47 +37,18 @@ function remove(val, arr) {
 //Paths = array of paths to watch for changes
 //Each path is an object with a "file" property and any of the following optional properties: url, ignore, recurse, rewrite
 //Last argument can optionally be an "options" object
-function serveManifest() {
-  var i, len;
-
-  //Parse arguments, apply defaults
-  var paths = [];
-  var opts, callback;
-
-  var numPaths = arguments.length;
-  if (numPaths === 0) {
-    throw new Error("Must provide at least one path to watch");
+function serveManifest(paths, opts, callback) {
+  if (! Array.isArray(paths)) {
+    throw new Error('First argument must be array of paths to watch');
   }
-  if (typeof arguments[numPaths - 1] === "function") {
-    callback = arguments[numPaths - 1];
-    numPaths--;
-    if (numPaths === 0) {
-      throw new Error("Must provide at least one path to watch");
-    }
-  } else {
-    callback = function() {};
+  if (paths.length === 0) {
+    throw new Error('Must provide at least one path to watch');
   }
-  if (typeof arguments[numPaths - 1] === 'object' && ! ('file' in arguments[numPaths - 1])) {
-    opts = arguments[numPaths - 1];
-    numPaths--;
-    if (numPaths === 0) {
-      throw new Error("Must provide at least one path to watch");
-    }
-  } else {
+  if (! opts) {
     opts = {};
   }
-
-  for(i = 0; i < numPaths; i++) {
-    var arg = arguments[i];
-    if (typeof arg === 'string') {
-      arg = { file: arg, url: arg };
-    }
-
-    if (i === (len - 1) && !'file' in arg) {
-      opts = arg;
-    } else {
-      paths.push(arg);
-    }
+  if (typeof callback !== 'function') {
+    callback = function() {};
   }
 
   var watchers = [];
@@ -86,12 +57,15 @@ function serveManifest() {
   var manifestVersion = new Date().toISOString();
 
   function checkReady() {
-    if (completedScans === numPaths && watchers.length === numPaths) {
+    if (completedScans === paths.length && watchers.length === paths.length) {
       callback(serveResponse);
     }
   }
 
   function usePath(p) {
+    if (typeof p === 'string') {
+      p = { file: p, url: p };
+    }
     if (! ('file' in p)) {
       throw new Error('Path object must contain a "file" property');
     }
@@ -168,7 +142,7 @@ function serveManifest() {
   }
 
   //Initialize the list of cache.manifest files
-  for(i = 0; i < numPaths; i++) {
+  for(var i = 0; i < paths.length; i++) {
     usePath(paths[i]);
   }
 
@@ -189,7 +163,7 @@ function serveManifest() {
 
   serveResponse['stop'] = function() {
     console.log('Stopping manifest generator filesystem watches');
-    for (var i = 0, len = watchers.length; i < len; i++) {
+    for (var i = 0; i < watchers.length; i++) {
       watchers[i].close();
     }
     watchers = [];
