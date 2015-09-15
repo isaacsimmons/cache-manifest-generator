@@ -117,22 +117,6 @@ function assertInManifest(server, line) {
 
 }
 
-function getManifestComment(server, callback) {
-  console.log('get comment!');
-  fakeReq(server, function(headers, body) {
-    body = body.split('\n');
-    var commentLine = null;
-    for(var i = 0; i < body.length; i--) {
-      if (body[i].startsWith('#')) {
-        assert.equal(commentLine, null, 'Multiple comment lines found in manifest');
-        commentLine = body[i];
-      }
-    }
-    assert.notEqual(commentLine, null, 'No comment found in manifest');
-    callback(commentLine);
-  });
-}
-
 function assertManifestChanged(server) {
 
 }
