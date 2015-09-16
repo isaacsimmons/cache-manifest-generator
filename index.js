@@ -147,7 +147,7 @@ function serveManifest(paths, opts, callback) {
           watchers.push(watcher);
           checkReady();
         },
-        catchupDelay: 500
+        catchupDelay: ('catchupDelay' in opts) ? opts['catchupDelay'] : 500
       });
     });
   }
