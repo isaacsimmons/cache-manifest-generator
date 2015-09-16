@@ -222,12 +222,10 @@ describe('Check initial data', function() {
   });
 });
 
-//TODO: observe changes to newly created files
+describe('Observe Changes', function() {
+  it('Should observe file creations and modifications to those new files');
 
-//TODO: notice files added to newly created nested directories
+  it('Should observe modifications to directly specified files');
 
-//TODO: observe file additions and modifications to those new files
-
-//TODO: notice file deletions
-
-//TODO: folder deletions!
+  it('Should observe creations and deletions in newly nested directories');
+});
