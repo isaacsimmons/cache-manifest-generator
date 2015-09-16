@@ -230,4 +230,4 @@ describe('Check initial data', function() {
 
 //TODO: notice file deletions
 
-//folder deletions!
+//TODO: folder deletions!
