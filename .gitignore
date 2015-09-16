@@ -1,3 +1,4 @@
 .idea
 cache.manifest
 node_modules
+test_files/some_files/new_dir

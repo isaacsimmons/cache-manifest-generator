@@ -3,6 +3,7 @@
 var assert = require("assert");
 var fs = require('fs');
 var path = require('path');
+var touch = require('touch');
 var middleware = require('../index.js');
 
 //Helper Functions
@@ -213,9 +214,78 @@ describe.skip('Initialization', function() {
 });
 
 describe('Observe Changes', function() {
-  it('Should observe file creations and modifications to those new files');
+  var newFile = 'test_files/some_files/new_dir/1.txt';
+  var newUrl = '/some/new_dir/1.txt';
 
-  it('Should observe modifications to directly specified files');
+
+      it('Should observe modifications to initial files');
+
+  //TODO: So many callbacks! Convert this to promises or something
+  it('Should observe file creations and modifications to those new files', function(done) {
+    console.log('test started');
+    middleware.generator(CONFIG, { catchupDelay: 0 }, function(server) {
+      console.log('server online');
+      function cleanup(err) {
+        console.log('bailing out');
+        console.log(err);
+        server.stop();
+        done(err);
+      }
+
+      getManifest(server, function(err, manifest) {
+        if (err) { return cleanup(err); }
+        try {
+          console.log('got the first manifest');
+          var comments = manifest['COMMENTS'];
+          console.log(comments);
+          assert(comments.length > 0, 'Expected to find a comment in the manifest');
+          var timestamp = comments[comments.length - 1];
+          console.log('ready to start wait1');
+          setTimeout(function() {
+            console.log('wait1');
+            //add a file
+            fs.mkdirSync(path.dirname(newFile));
+            setTimeout(function() {
+              fs.writeFileSync(newFile, 'TEXT');
+              //get the manifest
+              setTimeout(function() {
+                getManifest(server, function(err, manifest) {
+                  if (err) { return cleanup(err); }
+                  try {
+                    console.log(JSON.stringify(manifest['CACHE']));
+                    assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
+                    var comments = manifest['COMMENTS'];
+                    assert(comments.length > 0, 'Expected to find a comment in the manifest');
+                    assert.notEqual(comments[comments.length - 1], timestamp, 'Expected timestamp to be updated');
+                    console.log('YAY');
+                    timestamp = comments[comments.length - 1];
+                    setTimeout(function() {
+                      server.stop();
+                      done();
+                    }, 400);
+                  } catch (err) {
+                    cleanup(err);
+                  }
+                });
+              }, 400);
+            }, 400);
+            //wait another sec
+            //touch that file
+            //get the manifest
+            //timestamp is updated
+            //wait another sec
+            //delete that file
+            //file is not in the manifest
+            //timestamp is updated
+          }, 400);
+        } catch (err) {
+          console.log('top level error');
+          cleanup(err);
+        }
+      });
+    });
+
+  });
 
   it('Should observe creations and deletions in newly nested directories');
 });
