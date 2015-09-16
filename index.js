@@ -112,40 +112,48 @@ function serveManifest(paths, opts) {
     }
 
     function listener(evt, evtPath) {
-      console.log('listen event for ' + evtPath);
-      fs.stat(evtPath, function(err, stat) {
-        if (stat.isFile()) { //TODO: does this work for deleted items????
-          var url = toUrl(evtPath);
-          var modified = false;
-          if (evt === 'delete') {
-            modified = allFiles.remove(url);
-          } else if (evt === 'create') {
-            modified = allFiles.insert(url);
-          }
-          if (modified) {
-            manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
-            console.log('cache updated');
-            opts['updateListener']();
-          }
-        } else if (stat.isDirectory()) {
-          var anyAdded = false;
-          scanner.scandir(evtPath, {
-            fileAction: function(filePath, filename, next, stat) {
-              if (allFiles.insert(toUrl(filePath))) {
-                anyAdded = true;
-              }
-              next();
-            },
-            next: function() {
-              if (anyAdded) {
-                manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
-                console.log('cache updated');
-                opts['updateListener']();
-              }
+      console.log('listen event ' + evt + ' for ' + evtPath);
+
+      if (evt === 'create') {
+        fs.stat(evtPath, function(err, stat) {
+          if (stat.isFile()) { //TODO: does this work for deleted items????
+            var url = toUrl(evtPath);
+            if (allFiles.insert(url)) {
+              manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
+              console.log('cache updated');
+              opts['updateListener']();
             }
-          });
+          } else if (stat.isDirectory()) {
+            var anyAdded = false;
+            scanner.scandir(evtPath, {
+              fileAction: function(filePath, filename, next, stat) {
+                if (allFiles.insert(toUrl(filePath))) {
+                  anyAdded = true;
+                }
+                next();
+              },
+              next: function() {
+                if (anyAdded) {
+                  manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
+                  console.log('cache updated');
+                  opts['updateListener']();
+                }
+              }
+            });
+          }
+        });
+      } else if (evt === 'delete') {
+        var url = toUrl(evtPath);
+        if (allFiles.remove(url)) {
+          //TODO: this update timestamp stuff should be in a function
+          manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
+          console.log('cache updated');
+          opts['updateListener']();
+        } else {
+          //Probably a directory??
+          //Maybe keep a list of directory names somewhere if I need them?
         }
-      });
+      }
     }
 
     fs.stat(filePath, function(err, stat) {
