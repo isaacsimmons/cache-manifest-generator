@@ -174,12 +174,8 @@ describe('Check initial data', function() {
   it('Should contain expected elements', function (done) {
     middleware.generator(CONFIG, null, function(server) {
       getManifest(server, function(err, manifest) {
-        if (err) {
-          done(err);
-          server.stop();
-          return;
-        }
         try {
+          if (err) { throw err; }
           assert.deepEqual(manifest['NETWORK'], ['*'], 'Network section doesn\'t hold expected value'); //TODO: pull this from opts
           assert.deepEqual(manifest['CACHE'], INITIAL_URLS, 'Cache section doesn\'t hold expected value(s)');
           done();
@@ -203,12 +199,8 @@ describe('Check initial data', function() {
 
     middleware.generator(absolutePaths, null, function(server) {
       getManifest(server, function(err, manifest) {
-        if (err) {
-          done(err);
-          server.stop();
-          return;
-        }
         try {
+          if (err) { throw err; }
           assert.deepEqual(manifest['NETWORK'], ['*'], 'Network section doesn\'t hold expected value'); //TODO: pull this from opts
           assert.deepEqual(manifest['CACHE'], INITIAL_URLS, 'Cache section doesn\'t hold expected value(s)');
           done();
