@@ -259,12 +259,6 @@ describe('Observe Changes', function() {
       getManifest(server, function(err, manifest) {
         if (err) { return cleanup(err); }
         try {
-          console.log('got the first manifest');
-          var comments = manifest['COMMENTS'];
-          console.log(comments);
-          assert(comments.length > 0, 'Expected to find a comment in the manifest');
-          var timestamp = comments[comments.length - 1];
-          //add a file
           fs.mkdirSync(path.dirname(newFile));
           fs.writeFileSync(newFile, 'TEXT');
           //get the manifest
@@ -274,26 +268,32 @@ describe('Observe Changes', function() {
               try {
                 console.log(JSON.stringify(manifest['CACHE']));
                 assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
-                var comments = manifest['COMMENTS'];
-                assert(comments.length > 0, 'Expected to find a comment in the manifest');
-                assert.notEqual(comments[comments.length - 1], timestamp, 'Expected timestamp to be updated');
-                console.log('YAY');
-                timestamp = comments[comments.length - 1];
-                server.stop();
-                done();
+
+                touch.sync(newFile);
+                //TODO: the updateCallback should return the pre-parsed manifest object! (and the ready callback as well)
+                waitForUpdate(500, function() {
+                  //Nothing to assert, just that the waitForUpdate didn't time out
+
+                  fs.unlinkSync(newFile);
+                  //rmdirSync
+                  waitForUpdate(500, function() {
+                    getManifest(server, function(err, manifest) {
+                      if (err) { return cleanup(err); }
+                      try {
+                        assert(manifest['CACHE'].indexOf(newUrl) === -1, 'Deleted file shouldn\'t be in manifest');
+                        server.stop();
+                        done();
+                      } catch (err) {
+                        cleanup(err);
+                      }
+                    });
+                  });
+                });
               } catch (err) {
                 cleanup(err);
               }
             });
           });
-        //wait another sec
-          //touch that file
-          //get the manifest
-          //timestamp is updated
-          //wait another sec
-          //delete that file
-          //file is not in the manifest
-          //timestamp is updated
         } catch (err) {
           console.log('top level error');
           cleanup(err);
