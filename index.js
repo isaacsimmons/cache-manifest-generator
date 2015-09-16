@@ -98,6 +98,9 @@ function serveManifest(paths, opts) {
     //TODO: maybe turn all paths into absolute ones?
 
     function toUrl(orig) {
+      if (! orig.startsWith(filePath)) {
+        throw new Error('!!!!!!!!!!!!');
+      }
       //console.log('converting ' + orig);
       var relPath = orig.substr(filePath.length);
       if (relPath.startsWith(path.sep)) {
@@ -110,9 +113,6 @@ function serveManifest(paths, opts) {
 
     function listener(evt, evtPath) {
       console.log('listen event for ' + evtPath);
-      if (! evtPath.startsWith(filePath)) {
-        throw new Error('!!!!!!!!!!!!');
-      }
       fs.stat(evtPath, function(err, stat) {
         if (stat.isFile()) {
           var url = toUrl(evtPath);
