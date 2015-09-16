@@ -114,7 +114,7 @@ function serveManifest(paths, opts) {
     function listener(evt, evtPath) {
       console.log('listen event for ' + evtPath);
       fs.stat(evtPath, function(err, stat) {
-        if (stat.isFile()) {
+        if (stat.isFile()) { //TODO: does this work for deleted items????
           var url = toUrl(evtPath);
           var modified = false;
           if (evt === 'delete') {
