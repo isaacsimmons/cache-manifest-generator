@@ -30,16 +30,18 @@ function sortedSet() {
     var index = Math.abs(indexOf(val));
     if (arr.length <= index || arr[index] !== val) {
       arr.splice(index, 0, val);
+      return true;
     }
-    return arr;
+    return false;
   };
 
   arr.remove = function(val) {
     var index = indexOf(val);
     if (index >= 0 && arr[index] === val) {
       arr.splice(index, 1);
+      return true;
     }
-    return arr;
+    return false;
   };
 
   return arr;
@@ -108,13 +110,16 @@ function serveManifest(paths, opts, callback) {
       fs.stat(evtPath, function(err, stat) {
         if (stat.isFile()) {
           var url = toUrl(evtPath);
+          var modified = false;
           if (evt === 'delete') {
-            allFiles.remove(url);
+            modified = allFiles.remove(url);
           } else if (evt === 'create') {
-            allFiles.insert(url);
+            modified = allFiles.insert(url);
           }
-          manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
-          console.log('cache updated');
+          if (modified) {
+            manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
+            console.log('cache updated');
+          }
         }
       });
     }
