@@ -50,7 +50,7 @@ function sortedSet() {
 //Paths = array of paths to watch for changes
 //Each path is an object with a "file" property and any of the following optional properties: url, ignore, recurse, rewrite
 //Last argument can optionally be an "options" object
-function serveManifest(paths, opts, callback) {
+function serveManifest(paths, opts) {
   if (! Array.isArray(paths)) {
     throw new Error('First argument must be array of paths to watch');
   }
@@ -60,8 +60,14 @@ function serveManifest(paths, opts, callback) {
   if (! opts) {
     opts = {};
   }
-  if (typeof callback !== 'function') {
-    callback = function() {};
+  if (typeof opts['readyCallback'] !== 'function') {
+    opts['readyCallback'] = function() {};
+  }
+  if (typeof opts['updateListener'] !== 'function') {
+    opts['updateListener'] = function() {};
+  }
+  if (typeof opts['catchupDelay'] !== 'number') {
+    opts['catchupDelay'] = 500;
   }
 
   var watchers = [];
@@ -71,7 +77,7 @@ function serveManifest(paths, opts, callback) {
 
   function checkReady() {
     if (completedScans === paths.length && watchers.length === paths.length) {
-      callback(serveResponse);
+      opts['readyCallback'](serveResponse);
     }
   }
 
@@ -119,6 +125,7 @@ function serveManifest(paths, opts, callback) {
           if (modified) {
             manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
             console.log('cache updated');
+            opts['updateListener']();
           }
         }
       });
@@ -152,7 +159,7 @@ function serveManifest(paths, opts, callback) {
           watchers.push(watcher);
           checkReady();
         },
-        catchupDelay: ('catchupDelay' in opts) ? opts['catchupDelay'] : 500
+        catchupDelay: opts['catchupDelay']
       });
     });
   }

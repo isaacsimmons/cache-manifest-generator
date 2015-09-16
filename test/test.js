@@ -164,14 +164,14 @@ describe('Check filesystem', function() {
 
 describe.skip('Initialization', function() {
   it('should initialize properly', function (done) {
-    middleware.generator(CONFIG, null, function(server) {
+    middleware.generator(CONFIG, { readyCallback: function(server) {
       server.stop();
       done();
-    });
+    }});
   });
 
   it('Should contain expected elements', function (done) {
-    middleware.generator(CONFIG, null, function(server) {
+    middleware.generator(CONFIG, { readyCallback: function(server) {
       getManifest(server, function(err, manifest) {
         try {
           if (err) { throw err; }
@@ -184,7 +184,7 @@ describe.skip('Initialization', function() {
           server.stop();
         }
       });
-    });
+    }});
   });
 
   it('Should contain expected elements when configured with absolute paths', function (done) {
@@ -196,7 +196,7 @@ describe.skip('Initialization', function() {
       });
     }
 
-    middleware.generator(absolutePaths, null, function(server) {
+    middleware.generator(absolutePaths, { readyCallback: function(server) {
       getManifest(server, function(err, manifest) {
         try {
           if (err) { throw err; }
@@ -209,7 +209,7 @@ describe.skip('Initialization', function() {
           server.stop();
         }
       });
-    });
+    }});
   });
 });
 
@@ -223,7 +223,7 @@ describe('Observe Changes', function() {
   //TODO: So many callbacks! Convert this to promises or something
   it('Should observe file creations and modifications to those new files', function(done) {
     console.log('test started');
-    middleware.generator(CONFIG, { catchupDelay: 0 }, function(server) {
+    middleware.generator(CONFIG, { catchupDelay: 0, readyCallback: function(server) {
       console.log('server online');
       function cleanup(err) {
         console.log('bailing out');
@@ -283,8 +283,7 @@ describe('Observe Changes', function() {
           cleanup(err);
         }
       });
-    });
-
+    }});
   });
 
   it('Should observe creations and deletions in newly nested directories');
