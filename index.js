@@ -127,13 +127,29 @@ function serveManifest(paths, opts) {
             console.log('cache updated');
             opts['updateListener']();
           }
+        } else if (stat.isDirectory()) {
+          var anyAdded = false;
+          scanner.scandir(evtPath, {
+            fileAction: function(filePath, filename, next, stat) {
+              if (allFiles.insert(toUrl(filePath))) {
+                anyAdded = true;
+              }
+              next();
+            },
+            next: function() {
+              if (anyAdded) {
+                manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
+                console.log('cache updated');
+                opts['updateListener']();
+              }
+            }
+          });
         }
       });
     }
 
     fs.stat(filePath, function(err, stat) {
       if (err) { throw err; }
-      //TODO: keep track of the max 'mtime' (and maybe drop to second-level accuracy)
       if (stat.isDirectory()) {
         scanner.scandir(filePath, {
           fileAction: function(filePath, filename, next, stat) {
@@ -145,7 +161,8 @@ function serveManifest(paths, opts) {
             checkReady();
           }
         });
-      } else { //!isDirectory
+      } else if (stat.isFile()) {
+        //TODO: keep track of the max 'mtime' (and maybe drop to second-level accuracy)
         allFiles.insert(urlPath);
         completedScans++;
         checkReady();

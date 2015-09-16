@@ -266,30 +266,27 @@ describe('Observe Changes', function() {
           var timestamp = comments[comments.length - 1];
           //add a file
           fs.mkdirSync(path.dirname(newFile));
-          //It takes the watcher a second to start watching the nested folder and will not immediately notice new files in it
-          setTimeout(function() {
-            fs.writeFileSync(newFile, 'TEXT');
-            //get the manifest
-            waitForUpdate(500, function() {
-              getManifest(server, function(err, manifest) {
-                if (err) { return cleanup(err); }
-                try {
-                  console.log(JSON.stringify(manifest['CACHE']));
-                  assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
-                  var comments = manifest['COMMENTS'];
-                  assert(comments.length > 0, 'Expected to find a comment in the manifest');
-                  assert.notEqual(comments[comments.length - 1], timestamp, 'Expected timestamp to be updated');
-                  console.log('YAY');
-                  timestamp = comments[comments.length - 1];
-                  server.stop();
-                  done();
-                } catch (err) {
-                  cleanup(err);
-                }
-              });
+          fs.writeFileSync(newFile, 'TEXT');
+          //get the manifest
+          waitForUpdate(500, function() {
+            getManifest(server, function(err, manifest) {
+              if (err) { return cleanup(err); }
+              try {
+                console.log(JSON.stringify(manifest['CACHE']));
+                assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
+                var comments = manifest['COMMENTS'];
+                assert(comments.length > 0, 'Expected to find a comment in the manifest');
+                assert.notEqual(comments[comments.length - 1], timestamp, 'Expected timestamp to be updated');
+                console.log('YAY');
+                timestamp = comments[comments.length - 1];
+                server.stop();
+                done();
+              } catch (err) {
+                cleanup(err);
+              }
             });
-          }, 400);
-          //wait another sec
+          });
+        //wait another sec
           //touch that file
           //get the manifest
           //timestamp is updated
