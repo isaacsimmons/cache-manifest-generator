@@ -16,7 +16,8 @@
     "scandirectory": "2.x"
   },
   "devDependencies": {
-    "mocha": "^2.3.2"
+    "mocha": "2.x",
+    "touch": "1.x"
   },
   "scripts": {
     "test": "mocha"
