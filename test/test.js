@@ -217,11 +217,12 @@ describe('Observe Changes', function() {
   var newFile = 'test_files/some_files/new_dir/1.txt';
   var newUrl = '/some/new_dir/1.txt';
 
-
-      it('Should observe modifications to initial files');
+  it('Should observe modifications to initial files');
 
   //TODO: So many callbacks! Convert this to promises or something
   it('Should observe file creations and modifications to those new files', function(done) {
+    //TODO: "before" hooks to make sure the temp files are gone and the initial files are there
+
     console.log('test started');
     var updateCallback = null;
     function updateListener() {
