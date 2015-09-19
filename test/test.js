@@ -218,10 +218,9 @@ describe('Observe Changes', function() {
   var newUrl = '/some/new_dir/1.txt';
 
   var updateCallback = null;
-  function updateListener() {
-    console.log('it came back!');
+  function updateListener(val) {
     if (typeof updateCallback === 'function') {
-      updateCallback();
+      updateCallback(val);
       updateCallback = null;
     }
   }
@@ -237,10 +236,10 @@ describe('Observe Changes', function() {
       callback(new Error('Timeout waiting for update'));
     }, timeout);
 
-    updateCallback = function() {
+    updateCallback = function(val) {
       if (! outtaTime) {
         clearTimeout(timeoutId);
-        callback(null);
+        callback(null, val);
       }
     };
   }
@@ -248,7 +247,7 @@ describe('Observe Changes', function() {
   it('Should observe modifications to watched files', function(done) {
     middleware.generator(CONFIG, { catchupDelay: 0, updateListener: updateListener, readyCallback: function(server) {
       touch('test_files/hello.txt');
-      waitForUpdate(function(err) {
+      waitForUpdate(function(err, manifest) {
         server.stop();
         if (err) { done(err); }
         else { done(); }
@@ -259,7 +258,7 @@ describe('Observe Changes', function() {
   it('Should observe modifications to files in watched directories', function(done) {
     middleware.generator(CONFIG, { catchupDelay: 0, updateListener: updateListener, readyCallback: function(server) {
       touch('test_files/some_files/a.txt');
-      waitForUpdate(function(err) {
+      waitForUpdate(function(err, manifest) {
         server.stop();
         if (err) { done(err); }
         else { done(); }
@@ -270,7 +269,7 @@ describe('Observe Changes', function() {
   it('Should observe modifications to files in subdirectories', function(done) {
     middleware.generator(CONFIG, { catchupDelay: 0, updateListener: updateListener, readyCallback: function(server) {
       touch('test_files/some_files/nested/x.txt');
-      waitForUpdate(function(err) {
+      waitForUpdate(function(err, manifest) {
         server.stop();
         if (err) { done(err); }
         else { done(); }
@@ -292,35 +291,31 @@ describe('Observe Changes', function() {
       try {
         fs.mkdirSync(path.dirname(newFile));
         fs.writeFileSync(newFile, 'TEXT');
-        waitForUpdate(function() {
-          getManifest(server, function(err, manifest) {
-            if (err) { return cleanup(err); }
-            try {
-              assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
+        waitForUpdate(function(err, manifest) {
+          if (err) { return cleanup(err); }
+          try {
+            assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
 
-              touch.sync(newFile);
-              //TODO: the updateCallback should return the pre-parsed manifest object! (and the ready callback as well)
-              waitForUpdate(function() {
-                fs.unlinkSync(newFile);
-                //Deleting a directory that is being watched in Windows crashes watchr!
-                //fs.rmdirSync(path.dirname(newFile));
-                waitForUpdate(function() {
-                  getManifest(server, function(err, manifest) {
-                    if (err) { return cleanup(err); }
-                    try {
-                      assert(manifest['CACHE'].indexOf(newUrl) === -1, 'Deleted file shouldn\'t be in manifest');
-                      server.stop();
-                      done();
-                    } catch (err) {
-                      cleanup(err);
-                    }
-                  });
-                });
+            touch.sync(newFile);
+            //TODO: the updateCallback should return the pre-parsed manifest object! (and the ready callback as well)
+            waitForUpdate(function() {
+              fs.unlinkSync(newFile);
+              //Deleting a directory that is being watched in Windows crashes watchr!
+              //fs.rmdirSync(path.dirname(newFile));
+              waitForUpdate(function(err, manifest) {
+                if (err) { return cleanup(err); }
+                try {
+                  assert(manifest['CACHE'].indexOf(newUrl) === -1, 'Deleted file shouldn\'t be in manifest');
+                  server.stop();
+                  done();
+                } catch (err) {
+                  cleanup(err);
+                }
               });
-            } catch (err) {
-              cleanup(err);
-            }
-          });
+            });
+          } catch (err) {
+            cleanup(err);
+          }
         });
       } catch (err) {
         console.log('top level error');
