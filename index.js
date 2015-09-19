@@ -142,7 +142,18 @@ function serveManifest(paths, opts) {
             });
           }
         });
+      } else if (evt === 'update') {
+        fs.stat(evtPath, function(err, stat) {
+          if (stat.isFile()) { //Might it ever not be?
+            var url = toUrl(evtPath);
+            allFiles.insert(url);  //TODO: remove this? probably unnecessary but also harmless??
+            manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
+            console.log('cache updated');
+            opts['updateListener']();
+          }
+        });
       } else if (evt === 'delete') {
+        //TODO: what to do with the timestamp here? Maybe just leave it?
         var url = toUrl(evtPath);
         if (allFiles.remove(url)) {
           //TODO: this update timestamp stuff should be in a function
