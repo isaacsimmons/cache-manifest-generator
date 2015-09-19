@@ -272,10 +272,9 @@ describe('Observe Changes', function() {
                 touch.sync(newFile);
                 //TODO: the updateCallback should return the pre-parsed manifest object! (and the ready callback as well)
                 waitForUpdate(500, function() {
-                  //Nothing to assert, just that the waitForUpdate didn't time out
-
                   fs.unlinkSync(newFile);
-                  //rmdirSync
+                  //Deleting a directory that is being watched in Windows crashes watchr!
+                  //fs.rmdirSync(path.dirname(newFile));
                   waitForUpdate(500, function() {
                     getManifest(server, function(err, manifest) {
                       if (err) { return cleanup(err); }
