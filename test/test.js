@@ -145,12 +145,12 @@ describe('Check filesystem', function() {
   it('Should contain expected files', function(done) {
     var count = 0;
     for(var i = 0; i < INITIAL_FILES.length; i++) {
-      var path = INITIAL_FILES[i];
-      fs.stat(path, function(err, stat) {
+      var filePath = INITIAL_FILES[i];
+      fs.stat(filePath, function(err, stat) {
         count++;
         try {
-          assert.equal(err, null, 'Error getting fs stat for ' + path);
-          assert(stat.isFile(), 'Missing initial file ' + path);
+          assert.equal(err, null, 'Error getting fs stat');
+          assert(stat.isFile(), 'Missing initial file');
           if (count === INITIAL_FILES.length) {
             done();
           }
