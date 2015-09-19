@@ -206,7 +206,7 @@ describe.skip('Initialization', function() {
         } catch (err) {
           done(err);
         } finally {
-          server.stop();
+          server.stop(); //TODO: if I'm willing to stop the server before the rest of this, it can be simplified a bunch
         }
       });
     }});
