@@ -217,37 +217,70 @@ describe('Observe Changes', function() {
   var newFile = 'test_files/some_files/new_dir/1.txt';
   var newUrl = '/some/new_dir/1.txt';
 
-  it('Should observe modifications to initial files');
+  var updateCallback = null;
+  function updateListener() {
+    console.log('it came back!');
+    if (typeof updateCallback === 'function') {
+      updateCallback();
+      updateCallback = null;
+    }
+  }
+
+  function waitForUpdate(callback, timeout) {
+    var outtaTime = false;
+    if (typeof timeout !== 'number') {
+      timeout = 500;
+    }
+    var timeoutId = setTimeout(function() {
+      outtaTime = true;
+      updateCallback = null;
+      callback(new Error('Timeout waiting for update'));
+    }, timeout);
+
+    updateCallback = function() {
+      if (! outtaTime) {
+        clearTimeout(timeoutId);
+        callback(null);
+      }
+    };
+  }
+
+  it('Should observe modifications to watched files', function(done) {
+    middleware.generator(CONFIG, { catchupDelay: 0, updateListener: updateListener, readyCallback: function(server) {
+      touch('test_files/hello.txt');
+      waitForUpdate(function(err) {
+        server.stop();
+        if (err) { done(err); }
+        else { done(); }
+      });
+    }});
+  });
+
+  it('Should observe modifications to files in watched directories', function(done) {
+    middleware.generator(CONFIG, { catchupDelay: 0, updateListener: updateListener, readyCallback: function(server) {
+      touch('test_files/some_files/a.txt');
+      waitForUpdate(function(err) {
+        server.stop();
+        if (err) { done(err); }
+        else { done(); }
+      });
+    }});
+  });
+
+  it('Should observe modifications to files in subdirectories', function(done) {
+    middleware.generator(CONFIG, { catchupDelay: 0, updateListener: updateListener, readyCallback: function(server) {
+      touch('test_files/some_files/nested/x.txt');
+      waitForUpdate(function(err) {
+        server.stop();
+        if (err) { done(err); }
+        else { done(); }
+      });
+    }});
+  });
 
   //TODO: So many callbacks! Convert this to promises or something
   it('Should observe file creations and modifications to those new files', function(done) {
     //TODO: "before" hooks to make sure the temp files are gone and the initial files are there
-
-    console.log('test started');
-    var updateCallback = null;
-    function updateListener() {
-      if (typeof updateCallback === 'function') {
-        updateCallback();
-        updateCallback = null;
-      }
-    }
-
-    function waitForUpdate(timeout, callback) {
-      var outtaTime = false;
-      var timeoutId = setTimeout(function() {
-        outtaTime = true;
-        updateCallback = null;
-        callback(new Error('Timeout waiting for update'));
-      }, timeout);
-
-      updateCallback = function() {
-        if (! outtaTime) {
-          clearTimeout(timeoutId);
-          callback(null);
-        }
-      };
-    }
-
     middleware.generator(CONFIG, { catchupDelay: 0, updateListener: updateListener, readyCallback: function(server) {
       console.log('server online');
       function cleanup(err) {
@@ -257,13 +290,14 @@ describe('Observe Changes', function() {
         done(err);
       }
 
+      //TODO: don't need this outer getManifest
       getManifest(server, function(err, manifest) {
         if (err) { return cleanup(err); }
         try {
           fs.mkdirSync(path.dirname(newFile));
           fs.writeFileSync(newFile, 'TEXT');
           //get the manifest
-          waitForUpdate(500, function() {
+          waitForUpdate(function() {
             getManifest(server, function(err, manifest) {
               if (err) { return cleanup(err); }
               try {
@@ -272,11 +306,11 @@ describe('Observe Changes', function() {
 
                 touch.sync(newFile);
                 //TODO: the updateCallback should return the pre-parsed manifest object! (and the ready callback as well)
-                waitForUpdate(500, function() {
+                waitForUpdate(function() {
                   fs.unlinkSync(newFile);
                   //Deleting a directory that is being watched in Windows crashes watchr!
                   //fs.rmdirSync(path.dirname(newFile));
-                  waitForUpdate(500, function() {
+                  waitForUpdate(function() {
                     getManifest(server, function(err, manifest) {
                       if (err) { return cleanup(err); }
                       try {
