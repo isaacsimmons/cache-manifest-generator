@@ -282,7 +282,6 @@ describe('Observe Changes', function() {
   it('Should observe file creations and modifications to those new files', function(done) {
     //TODO: "before" hooks to make sure the temp files are gone and the initial files are there
     middleware.generator(CONFIG, { catchupDelay: 0, updateListener: updateListener, readyCallback: function(server) {
-      console.log('server online');
       function cleanup(err) {
         console.log('bailing out');
         console.log(err);
@@ -290,49 +289,43 @@ describe('Observe Changes', function() {
         done(err);
       }
 
-      //TODO: don't need this outer getManifest
-      getManifest(server, function(err, manifest) {
-        if (err) { return cleanup(err); }
-        try {
-          fs.mkdirSync(path.dirname(newFile));
-          fs.writeFileSync(newFile, 'TEXT');
-          //get the manifest
-          waitForUpdate(function() {
-            getManifest(server, function(err, manifest) {
-              if (err) { return cleanup(err); }
-              try {
-                console.log(JSON.stringify(manifest['CACHE']));
-                assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
+      try {
+        fs.mkdirSync(path.dirname(newFile));
+        fs.writeFileSync(newFile, 'TEXT');
+        waitForUpdate(function() {
+          getManifest(server, function(err, manifest) {
+            if (err) { return cleanup(err); }
+            try {
+              assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
 
-                touch.sync(newFile);
-                //TODO: the updateCallback should return the pre-parsed manifest object! (and the ready callback as well)
+              touch.sync(newFile);
+              //TODO: the updateCallback should return the pre-parsed manifest object! (and the ready callback as well)
+              waitForUpdate(function() {
+                fs.unlinkSync(newFile);
+                //Deleting a directory that is being watched in Windows crashes watchr!
+                //fs.rmdirSync(path.dirname(newFile));
                 waitForUpdate(function() {
-                  fs.unlinkSync(newFile);
-                  //Deleting a directory that is being watched in Windows crashes watchr!
-                  //fs.rmdirSync(path.dirname(newFile));
-                  waitForUpdate(function() {
-                    getManifest(server, function(err, manifest) {
-                      if (err) { return cleanup(err); }
-                      try {
-                        assert(manifest['CACHE'].indexOf(newUrl) === -1, 'Deleted file shouldn\'t be in manifest');
-                        server.stop();
-                        done();
-                      } catch (err) {
-                        cleanup(err);
-                      }
-                    });
+                  getManifest(server, function(err, manifest) {
+                    if (err) { return cleanup(err); }
+                    try {
+                      assert(manifest['CACHE'].indexOf(newUrl) === -1, 'Deleted file shouldn\'t be in manifest');
+                      server.stop();
+                      done();
+                    } catch (err) {
+                      cleanup(err);
+                    }
                   });
                 });
-              } catch (err) {
-                cleanup(err);
-              }
-            });
+              });
+            } catch (err) {
+              cleanup(err);
+            }
           });
-        } catch (err) {
-          console.log('top level error');
-          cleanup(err);
-        }
-      });
+        });
+      } catch (err) {
+        console.log('top level error');
+        cleanup(err);
+      }
     }});
   });
 
