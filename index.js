@@ -70,10 +70,15 @@ function serveManifest(paths, opts) {
     opts['catchupDelay'] = 500;
   }
 
+  var manifest = {
+    CACHE: sortedSet(),
+    NETWORK: [],
+    FALLBACK: [],
+    TIMESTAMP: new Date().toISOString()
+  };
+
   var watchers = [];
-  var allFiles = sortedSet();
   var completedScans = 0;
-  var manifestVersion = new Date().toISOString();
 
   function checkReady() {
     if (completedScans === paths.length && watchers.length === paths.length) {
@@ -118,25 +123,27 @@ function serveManifest(paths, opts) {
         fs.stat(evtPath, function(err, stat) {
           if (stat.isFile()) { //TODO: does this work for deleted items????
             var url = toUrl(evtPath);
-            if (allFiles.insert(url)) {
-              manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
+            if (manifest['CACHE'].insert(url)) {
+              manifest['TIMESTAMP'] = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
               console.log('cache updated');
-              opts['updateListener']();
+              opts['updateListener'](manifest);
             }
           } else if (stat.isDirectory()) {
             var anyAdded = false;
+            //var maxNestedMtime = null;
             scanner.scandir(evtPath, {
               fileAction: function(filePath, filename, next, stat) {
-                if (allFiles.insert(toUrl(filePath))) {
+
+                if (manifest['CACHE'].insert(toUrl(filePath))) {
                   anyAdded = true;
                 }
                 next();
               },
               next: function() {
                 if (anyAdded) {
-                  manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
+                  manifest['TIMESTAMP'] = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
                   console.log('cache updated');
-                  opts['updateListener']();
+                  opts['updateListener'](manifest);
                 }
               }
             });
@@ -146,20 +153,20 @@ function serveManifest(paths, opts) {
         fs.stat(evtPath, function(err, stat) {
           if (stat.isFile()) { //Might it ever not be?
             var url = toUrl(evtPath);
-            allFiles.insert(url);  //TODO: remove this? probably unnecessary but also harmless??
-            manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
+            manifest['CACHE'].insert(url);  //TODO: remove this? probably unnecessary but also harmless??
+            manifest['TIMESTAMP'] = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
             console.log('cache updated');
-            opts['updateListener']();
+            opts['updateListener'](manifest);
           }
         });
       } else if (evt === 'delete') {
         //TODO: what to do with the timestamp here? Maybe just leave it?
         var url = toUrl(evtPath);
-        if (allFiles.remove(url)) {
+        if (manifest['CACHE'].remove(url)) {
           //TODO: this update timestamp stuff should be in a function
-          manifestVersion = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
+          manifest['TIMESTAMP'] = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
           console.log('cache updated');
-          opts['updateListener']();
+          opts['updateListener'](manifest);
         } else {
           //Probably a directory??
           //Maybe keep a list of directory names somewhere if I need them?
@@ -172,7 +179,7 @@ function serveManifest(paths, opts) {
       if (stat.isDirectory()) {
         scanner.scandir(filePath, {
           fileAction: function(filePath, filename, next, stat) {
-            allFiles.insert(toUrl(filePath));
+            manifest['CACHE'].insert(toUrl(filePath));
             next();
           },
           next: function() {
@@ -182,7 +189,7 @@ function serveManifest(paths, opts) {
         });
       } else if (stat.isFile()) {
         //TODO: keep track of the max 'mtime' (and maybe drop to second-level accuracy)
-        allFiles.insert(urlPath);
+        manifest['CACHE'].insert(urlPath);
         completedScans++;
         checkReady();
       }
@@ -211,12 +218,13 @@ function serveManifest(paths, opts) {
     res.set('Content-Type', 'text/cache-manifest');
     res.write('CACHE MANIFEST\n');
     //res.write('/json/lists.json\n');  //TODO: this
-    for (var i = 0, len = allFiles.length; i < len; i++) {
-      res.write(allFiles[i] + '\n');
+    for (var i = 0, len = manifest['CACHE'].length; i < len; i++) {
+      res.write(manifest['CACHE'][i] + '\n');
     }
     res.write('\nNETWORK:\n*\n\n');
-    //TODO: maybe just NETWORK block the JSON blobs instead of *?
-    res.write('#Updated: ' + manifestVersion);
+    //TODO: NETWORK and FALLBACK based on vars
+
+    res.write('#Updated: ' + manifest['TIMESTAMP']);
     res.end();
   }
 
