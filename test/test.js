@@ -217,6 +217,30 @@ describe('Observe Changes', function() {
   var newFile = 'test_files/some_files/new_dir/1.txt';
   var newUrl = '/some/new_dir/1.txt';
 
+  function deleteTempFiles() {
+    try {
+      fs.statSync(path.dirname(newFile));
+      try {
+        fs.statSync(newFile);
+        fs.unlinkSync(newFile);
+
+      } catch (fileErr) {
+        if (fileErr.code !== 'ENOENT') {
+          throw fileErr;
+        }
+      }
+      fs.rmdirSync(path.dirname(newFile));
+    } catch (dirErr) {
+      if (dirErr.code !== 'ENOENT') {
+        throw dirErr;
+      }
+    }
+  }
+
+  before(deleteTempFiles);
+  after(deleteTempFiles);
+
+  //Functions to watch a callback once and only once with a timeout
   var updateCallback = null;
   function updateListener(val) {
     if (typeof updateCallback === 'function') {
@@ -279,7 +303,6 @@ describe('Observe Changes', function() {
 
   //TODO: So many callbacks! Convert this to promises or something
   it('Should observe file creations and modifications to those new files', function(done) {
-    //TODO: "before" hooks to make sure the temp files are gone and the initial files are there
     middleware.generator(CONFIG, { catchupDelay: 0, updateListener: updateListener, readyCallback: function(server) {
       function cleanup(err) {
         console.log('bailing out');
