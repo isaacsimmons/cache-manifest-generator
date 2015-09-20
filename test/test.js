@@ -240,6 +240,21 @@ describe('Observe Changes', function() {
   before(deleteTempFiles);
   after(deleteTempFiles);
 
+
+  var server = null;
+  beforeEach(function(done) {
+    middleware.generator(CONFIG, { catchupDelay: 0, updateListener: updateListener, readyCallback: function(s) {
+      server = s;
+      done();
+    }});
+  });
+
+  afterEach(function() {
+    assert(server !== null, 'Server shouldn\'t be null after test');
+    server.stop();
+    server = null;
+  });
+
   //Functions to watch a callback once and only once with a timeout
   var updateCallback = null;
   function updateListener(val) {
@@ -269,81 +284,62 @@ describe('Observe Changes', function() {
   }
 
   it('Should observe modifications to watched files', function(done) {
-    middleware.generator(CONFIG, { catchupDelay: 0, updateListener: updateListener, readyCallback: function(server) {
-      touch('test_files/hello.txt');
-      waitForUpdate(function(err, manifest) {
-        server.stop();
-        if (err) { done(err); }
-        else { done(); }
-      });
-    }});
+    touch('test_files/hello.txt');
+    waitForUpdate(function(err, manifest) {
+      if (err) { done(err); }
+      else { done(); }
+    });
   });
 
   it('Should observe modifications to files in watched directories', function(done) {
-    middleware.generator(CONFIG, { catchupDelay: 0, updateListener: updateListener, readyCallback: function(server) {
-      touch('test_files/some_files/a.txt');
-      waitForUpdate(function(err, manifest) {
-        server.stop();
-        if (err) { done(err); }
-        else { done(); }
-      });
-    }});
+    touch('test_files/some_files/a.txt');
+    waitForUpdate(function(err, manifest) {
+      if (err) { done(err); }
+      else { done(); }
+    });
   });
 
   it('Should observe modifications to files in subdirectories', function(done) {
-    middleware.generator(CONFIG, { catchupDelay: 0, updateListener: updateListener, readyCallback: function(server) {
-      touch('test_files/some_files/nested/x.txt');
-      waitForUpdate(function(err, manifest) {
-        server.stop();
-        if (err) { done(err); }
-        else { done(); }
-      });
-    }});
+    touch('test_files/some_files/nested/x.txt');
+    waitForUpdate(function(err, manifest) {
+      if (err) { done(err); }
+      else { done(); }
+    });
   });
 
   //TODO: So many callbacks! Convert this to promises or something
   it('Should observe file creations and modifications to those new files', function(done) {
-    middleware.generator(CONFIG, { catchupDelay: 0, updateListener: updateListener, readyCallback: function(server) {
-      function cleanup(err) {
-        console.log('bailing out');
-        console.log(err);
-        server.stop();
-        done(err);
-      }
-
-      try {
-        fs.mkdirSync(path.dirname(newFile));
-        fs.writeFileSync(newFile, 'TEXT');
-        waitForUpdate(function(err, manifest) {
-          if (err) { return cleanup(err); }
-          try {
-            assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
-            touch.sync(newFile);
+    try {
+      fs.mkdirSync(path.dirname(newFile));
+      fs.writeFileSync(newFile, 'TEXT');
+      waitForUpdate(function(err, manifest) {
+        if (err) { return done(err); }
+        try {
+          assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
+          touch.sync(newFile);
+          waitForUpdate(function(err, manifest) {
+            //if (err) { return done(err); }
+            fs.unlinkSync(newFile);
+            //Deleting a directory that is being watched in Windows crashes watchr!
+            //fs.rmdirSync(path.dirname(newFile));
             waitForUpdate(function(err, manifest) {
-              //if (err) { return cleanup(err); }
-              fs.unlinkSync(newFile);
-              //Deleting a directory that is being watched in Windows crashes watchr!
-              //fs.rmdirSync(path.dirname(newFile));
-              waitForUpdate(function(err, manifest) {
-                if (err) { return cleanup(err); }
-                try {
-                  assert(manifest['CACHE'].indexOf(newUrl) === -1, 'Deleted file shouldn\'t be in manifest');
-                  server.stop();
-                  done();
-                } catch (err) {
-                  cleanup(err);
-                }
-              });
+              if (err) { return done(err); }
+              try {
+                assert(manifest['CACHE'].indexOf(newUrl) === -1, 'Deleted file shouldn\'t be in manifest');
+                server.stop();
+                done();
+              } catch (err) {
+                done(err);
+              }
             });
-          } catch (err) {
-            cleanup(err);
-          }
-        });
-      } catch (err) {
-        console.log('top level error');
-        cleanup(err);
-      }
-    }});
+          });
+        } catch (err) {
+          done(err);
+        }
+      });
+    } catch (err) {
+      done(err);
+    }
   });
 
   it('Should observe creations and deletions in newly nested directories');
