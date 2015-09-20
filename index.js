@@ -60,11 +60,15 @@ function serveManifest(paths, opts) {
   if (! opts) {
     opts = {};
   }
+  //TODO: local variables instead of leaving them in opts? less opportunity for weirdness if people swap things around?
   if (typeof opts['readyCallback'] !== 'function') {
     opts['readyCallback'] = function() {};
   }
   if (typeof opts['updateListener'] !== 'function') {
     opts['updateListener'] = function() {};
+  }
+  if (typeof opts['fileListener'] !== 'function') {
+    opts['fileListener'] = function() {};
   }
   if (typeof opts['catchupDelay'] !== 'number') {
     opts['catchupDelay'] = 500;
@@ -117,8 +121,6 @@ function serveManifest(paths, opts) {
     }
 
     function listener(evt, evtPath) {
-      console.log('listen event ' + evt + ' for ' + evtPath);
-
       if (evt === 'create') {
         fs.stat(evtPath, function(err, stat) {
           if (stat.isFile()) { //TODO: does this work for deleted items????
@@ -131,9 +133,10 @@ function serveManifest(paths, opts) {
           } else if (stat.isDirectory()) {
             var anyAdded = false;
             //var maxNestedMtime = null;
+            //A file added too quickly after its directory is created can be skipped over, so we re-scan any newly
+            //  added directories to catch those files
             scanner.scandir(evtPath, {
               fileAction: function(filePath, filename, next, stat) {
-
                 if (manifest['CACHE'].insert(toUrl(filePath))) {
                   anyAdded = true;
                 }
@@ -172,6 +175,7 @@ function serveManifest(paths, opts) {
           //Maybe keep a list of directory names somewhere if I need them?
         }
       }
+      opts['fileListener'](evt, evtPath);
     }
 
     fs.stat(filePath, function(err, stat) {
