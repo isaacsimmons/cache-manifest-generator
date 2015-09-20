@@ -117,7 +117,7 @@ describe('Check filesystem', function() {
       fs.stat(filePath, function(err, stat) {
         count++;
         try {
-          assert.equal(err, null, 'Error getting fs stat');
+          assert(err === null, 'Error getting fs stat');
           assert(stat.isFile(), 'Missing initial file');
           if (count === INITIAL_FILES.length) {
             done();
@@ -167,14 +167,13 @@ describe.skip('Initialization', function() {
     middleware.generator(absolutePaths, { readyCallback: function(server) {
       getManifest(server, function(err, manifest) {
         try {
-          if (err) { throw err; }
+          server.stop();
+          if (err) { return done(err); }
           assert.deepEqual(manifest['NETWORK'], ['*'], 'Network section doesn\'t hold expected value'); //TODO: pull this from opts
           assert.deepEqual(manifest['CACHE'], INITIAL_URLS, 'Cache section doesn\'t hold expected value(s)');
           done();
         } catch (err) {
           done(err);
-        } finally {
-          server.stop(); //TODO: if I'm willing to stop the server before the rest of this, it can be simplified a bunch
         }
       });
     }});
@@ -207,7 +206,6 @@ describe('Observe Changes', function() {
 
   before(deleteTempFiles);
   after(deleteTempFiles);
-
 
   var server = null;
   beforeEach(function(done) {
@@ -294,7 +292,6 @@ describe('Observe Changes', function() {
               if (err) { return done(err); }
               try {
                 assert(manifest['CACHE'].indexOf(newUrl) === -1, 'Deleted file shouldn\'t be in manifest');
-                server.stop();
                 done();
               } catch (err) {
                 done(err);
