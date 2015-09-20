@@ -318,10 +318,9 @@ describe('Observe Changes', function() {
           if (err) { return cleanup(err); }
           try {
             assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
-
             touch.sync(newFile);
-            //TODO: the updateCallback should return the pre-parsed manifest object! (and the ready callback as well)
-            waitForUpdate(function() {
+            waitForUpdate(function(err, manifest) {
+              //if (err) { return cleanup(err); }
               fs.unlinkSync(newFile);
               //Deleting a directory that is being watched in Windows crashes watchr!
               //fs.rmdirSync(path.dirname(newFile));
