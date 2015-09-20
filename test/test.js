@@ -76,38 +76,6 @@ function parseManifest(body) {
   return manifest;
 }
 
-function addFile(path) {
-
-}
-
-function touchFile(path) {
-
-}
-
-function delFile(path) {
-
-}
-
-function addDir(path) {
-
-}
-
-function rmDir(path) {
-
-}
-
-function assertInManifest(server, line) {
-
-}
-
-function assertManifestChanged(server) {
-
-}
-
-function assertManifestNotChanged(server) {
-
-}
-
 var CONFIG = [{
     file: 'test_files/some_files',
     url: 'some'
