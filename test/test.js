@@ -306,7 +306,6 @@ describe('Observe Changes', function() {
       fs.mkdirSync(path.dirname(newFile));
       fileWatcher.wait('Timeout waiting for directory create event', function(err, evt, evtPath) {
         if (err) { return done(err); }
-        console.log('waited and got ' + evt + ', ' + evtPath);
         fs.writeFileSync(newFile, 'TEXT');
         manifestWatcher.wait('Timeout waiting for update after file creation', function(err, manifest) {
           if (err) { return done(err); }
