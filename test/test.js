@@ -326,25 +326,23 @@ describe('Observe Changes', function() {
         manifestWatcher.wait('Timeout waiting for update after file creation', function(err, manifest) {
           if (err) { return done(err); }
           try {
-            assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
-            setTimeout(function() {  //Need this delay or watchr will lump the update event in with the creation one and not pass it to us
-              touch.sync(newFile);
-              manifestWatcher.wait('Timeout waiting for update after file touch', function(err, manifest) {
+          assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
+            touch.sync(newFile);
+            manifestWatcher.wait('Timeout waiting for update after file touch', function(err, manifest) {
+              if (err) { return done(err); }
+              fs.unlinkSync(newFile);
+              //Deleting a directory that is being watched in Windows crashes watchr!
+              //fs.rmdirSync(path.dirname(newFile));
+              manifestWatcher.wait('Timeout waiting for update after file delete', function(err, manifest) {
                 if (err) { return done(err); }
-                fs.unlinkSync(newFile);
-                //Deleting a directory that is being watched in Windows crashes watchr!
-                //fs.rmdirSync(path.dirname(newFile));
-                manifestWatcher.wait('Timeout waiting for update after file delete', function(err, manifest) {
-                  if (err) { return done(err); }
-                  try {
-                    assert(manifest['CACHE'].indexOf(newUrl) === -1, 'Deleted file shouldn\'t be in manifest');
-                    done();
-                  } catch (err) {
-                    done(err);
-                  }
-                });
+                try {
+                  assert(manifest['CACHE'].indexOf(newUrl) === -1, 'Deleted file shouldn\'t be in manifest');
+                  done();
+                } catch (err) {
+                  done(err);
+                }
               });
-            }, 500);
+            });
           } catch (err) {
             done(err);
           }
