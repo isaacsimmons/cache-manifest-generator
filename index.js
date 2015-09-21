@@ -59,10 +59,10 @@ function serveManifest(paths, opts) {
     opts = {};
   }
 
-  var readyCallback = (typeof opts['readyCallback'] === 'function') ? opts['readyCallback'] : function() {};
-  var updateListener = (typeof opts['updateListener'] === 'function') ? opts['updateListener'] : function() {};
-  var fileListener = (typeof opts['fileListener'] === 'function') ? opts['fileListener'] : function() {};
-  var catchupDelay = (typeof opts['catchupDelay'] === 'number') ? opts['catchupDelay'] : 500;
+  var readyCallback = typeof opts['readyCallback'] === 'function' ? opts['readyCallback'] : function() {};
+  var updateListener = typeof opts['updateListener'] === 'function' ? opts['updateListener'] : function() {};
+  var fileListener = typeof opts['fileListener'] === 'function' ? opts['fileListener'] : function() {};
+  var catchupDelay = typeof opts['catchupDelay'] === 'number' ? opts['catchupDelay'] : 500;
 
   var manifest = {
     CACHE: sortedSet(),
