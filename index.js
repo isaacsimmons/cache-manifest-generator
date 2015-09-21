@@ -87,21 +87,20 @@ function serveManifest(paths, opts) {
     if (! ('file' in p)) {
       throw new Error('Path object must contain a "file" property');
     }
-    var filePath = p['file'];
-    var urlPath = p['url'] || p['file'];
-    if (! urlPath.startsWith('/')) {
-      urlPath = '/' + urlPath;
+    var baseFilePath = p['file'];
+    var baseUrlPath = p['url'] || p['file'];
+    if (! baseUrlPath.startsWith('/')) {  //Make sure URL starts with /
+      baseUrlPath = '/' + baseUrlPath;
     }
+    baseFilePath = path.format(path.parse(baseFilePath)); //Make sure filePath uses OS native separators
 
-    filePath = path.format(path.parse(filePath));
-
-    function toUrl(orig) {
-      var relPath = orig.substr(filePath.length);
+    function toUrl(filePath) {
+      var relPath = filePath.substr(baseFilePath.length);
       if (relPath.startsWith(path.sep)) {
         relPath = relPath.substr(path.sep.length);
       }
       //Convert to /'s for URL in case the filePath has \ separators
-      return urlPath + '/' + path.posix.format(path.parse(relPath));
+      return baseUrlPath + '/' + path.posix.format(path.parse(relPath));
     }
 
     function listener(evt, evtPath) {
@@ -161,10 +160,10 @@ function serveManifest(paths, opts) {
       fileListener(evt, evtPath);
     }
 
-    fs.stat(filePath, function(err, stat) {
+    fs.stat(baseFilePath, function(err, stat) {
       if (err) { throw err; }
       if (stat.isDirectory()) {
-        scanner.scandir(filePath, {
+        scanner.scandir(baseFilePath, {
           fileAction: function(filePath, filename, next, stat) {
             manifest['CACHE'].insert(toUrl(filePath));
             if (stat.mtime > manifest['TIMESTAMP'] ) {
@@ -181,14 +180,14 @@ function serveManifest(paths, opts) {
         if (stat.mtime > manifest['TIMESTAMP'] ) {
           manifest['TIMESTAMP']  = stat.mtime;
         }
-        manifest['CACHE'].insert(urlPath);
+        manifest['CACHE'].insert(baseUrlPath);
         completedScans++;
         checkReady();
       }
 
-      console.log('gonna watch ' + filePath);
+      console.log('gonna watch ' + baseFilePath);
       watchr.watch({
-        path: filePath,
+        path: baseFilePath,
         listener: listener,
         next: function(err, watcher) {
           watchers.push(watcher);
