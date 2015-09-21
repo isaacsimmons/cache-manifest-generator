@@ -103,28 +103,34 @@ function serveManifest(paths, opts) {
       return baseUrlPath + '/' + path.posix.format(path.parse(relPath));
     }
 
+    function onFile(filePath, stat, supressCallback) {
+      var modified = false;
+      if (manifest['CACHE'].insert(toUrl(filePath))) {
+        modified = true;
+      }
+      if (stat.mtime > manifest['TIMESTAMP'] ) {
+        manifest['TIMESTAMP'] = stat.mtime;
+        modified = true;
+      }
+      if (modified && (supressCallback !== true)) {
+        console.log('cache updated');
+        updateListener(manifest);
+      }
+      return modified;
+    }
+
     function listener(evt, evtPath) {
       if (evt === 'create') {
         fs.stat(evtPath, function(err, stat) {
           if (stat.isFile()) {
-            var url = toUrl(evtPath);
-            if (manifest['CACHE'].insert(url)) {
-              if (stat.mtime > manifest['TIMESTAMP'] ) {
-                manifest['TIMESTAMP'] = stat.mtime;
-              }
-              console.log('cache updated');
-              updateListener(manifest);
-            }
+            onFile(evtPath, stat);
           } else if (stat.isDirectory()) {
             var anyAdded = false;
             //A file added too quickly after its directory is created can be skipped over, so we re-scan any newly
             //  added directories to catch those files
             scanner.scandir(evtPath, {
               fileAction: function(filePath, filename, next, stat) {
-                if (manifest['CACHE'].insert(toUrl(filePath))) {
-                  if (stat.mtime > manifest['TIMESTAMP'] ) {
-                    manifest['TIMESTAMP'] = stat.mtime;
-                  }
+                if (onFile(filePath, stat, true)) {
                   anyAdded = true;
                 }
                 next();
@@ -141,18 +147,11 @@ function serveManifest(paths, opts) {
       } else if (evt === 'update') {
         fs.stat(evtPath, function(err, stat) {
           if (stat.isFile()) {
-            var url = toUrl(evtPath);
-            manifest['CACHE'].insert(url);
-            if (stat.mtime > manifest['TIMESTAMP'] ) {
-              manifest['TIMESTAMP'] = stat.mtime;
-            }
-            console.log('cache updated');
-            updateListener(manifest);
+            onFile(evtPath, stat);
           }
         });
       } else if (evt === 'delete') {
-        var url = toUrl(evtPath);
-        if (manifest['CACHE'].remove(url)) {
+        if (manifest['CACHE'].remove(toUrl(evtPath))) {
           console.log('cache updated');
           updateListener(manifest);
         }
