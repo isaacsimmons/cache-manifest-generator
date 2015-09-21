@@ -336,6 +336,4 @@ describe('Observe Changes', function() {
       done(err);
     }
   });
-
-  it('Should observe creations and deletions in newly nested directories');
 });
