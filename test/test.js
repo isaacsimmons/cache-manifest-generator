@@ -316,6 +316,8 @@ describe('Observe Changes', function() {
             manifestWatcher.wait('Timeout waiting for update after file touch', function(err, manifest) {
               //TODO: this fails if the catchupDelay is set too high. Even after the create event has fired,
               //  watchr is still willing to swallow an adjacent update delete as belonging together
+              //TODO: worse than that, it still seems to fail anyways sometimes when the filesystem doesn't have
+              //  this folder cached or whatever. Some non-deterministic behavior
               if (err) { return done(err); }
               fs.unlinkSync(newFile);
               //Deleting a directory that is being watched in Windows crashes watchr!
