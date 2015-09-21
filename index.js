@@ -78,7 +78,7 @@ function serveManifest(paths, opts) {
     CACHE: sortedSet(),
     NETWORK: [],
     FALLBACK: [],
-    TIMESTAMP: new Date().toISOString()
+    TIMESTAMP: new Date(0)
   };
 
   var watchers = [];
@@ -126,7 +126,7 @@ function serveManifest(paths, opts) {
           if (stat.isFile()) { //TODO: does this work for deleted items????
             var url = toUrl(evtPath);
             if (manifest['CACHE'].insert(url)) {
-              manifest['TIMESTAMP'] = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
+              manifest['TIMESTAMP'] = stat.mtime;
               console.log('cache updated');
               opts['updateListener'](manifest);
             }
@@ -138,13 +138,13 @@ function serveManifest(paths, opts) {
             scanner.scandir(evtPath, {
               fileAction: function(filePath, filename, next, stat) {
                 if (manifest['CACHE'].insert(toUrl(filePath))) {
+                  manifest['TIMESTAMP'] = stat.mtime;
                   anyAdded = true;
                 }
                 next();
               },
               next: function() {
                 if (anyAdded) {
-                  manifest['TIMESTAMP'] = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
                   console.log('cache updated');
                   opts['updateListener'](manifest);
                 }
@@ -157,7 +157,7 @@ function serveManifest(paths, opts) {
           if (stat.isFile()) { //Might it ever not be?
             var url = toUrl(evtPath);
             manifest['CACHE'].insert(url);  //TODO: remove this? probably unnecessary but also harmless??
-            manifest['TIMESTAMP'] = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
+            manifest['TIMESTAMP'] = stat.mtime;
             console.log('cache updated');
             opts['updateListener'](manifest);
           }
@@ -166,8 +166,6 @@ function serveManifest(paths, opts) {
         //TODO: what to do with the timestamp here? Maybe just leave it?
         var url = toUrl(evtPath);
         if (manifest['CACHE'].remove(url)) {
-          //TODO: this update timestamp stuff should be in a function
-          manifest['TIMESTAMP'] = new Date().toISOString(); //TODO: use the time from stat? thanks to "catchupDelay" I may not have the right time anymore
           console.log('cache updated');
           opts['updateListener'](manifest);
         } else {
@@ -184,6 +182,9 @@ function serveManifest(paths, opts) {
         scanner.scandir(filePath, {
           fileAction: function(filePath, filename, next, stat) {
             manifest['CACHE'].insert(toUrl(filePath));
+            if (stat.mtime > manifest['TIMESTAMP'] ) {
+              manifest['TIMESTAMP'] = stat.mtime;
+            }
             next();
           },
           next: function() {
@@ -192,7 +193,9 @@ function serveManifest(paths, opts) {
           }
         });
       } else if (stat.isFile()) {
-        //TODO: keep track of the max 'mtime' (and maybe drop to second-level accuracy)
+        if (stat.mtime > manifest['TIMESTAMP'] ) {
+          manifest['TIMESTAMP']  = stat.mtime;
+        }
         manifest['CACHE'].insert(urlPath);
         completedScans++;
         checkReady();
@@ -228,7 +231,10 @@ function serveManifest(paths, opts) {
     res.write('\nNETWORK:\n*\n\n');
     //TODO: NETWORK and FALLBACK based on vars
 
-    res.write('#Updated: ' + manifest['TIMESTAMP']);
+    //Drop milliseconds since filesystem mtimes only report second accuracy
+    var timeString = manifest['TIMESTAMP'].toISOString();
+    timeString = timeString.substring(0, timeString.length - 5) + 'Z';
+    res.write('#Updated: ' + timeString);
     res.end();
   }
 
