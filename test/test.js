@@ -180,14 +180,14 @@ describe('Check filesystem', function() {
 
 describe('Initialization', function() {
   it('should initialize properly', function (done) {
-    middleware.generator(CONFIG, { readyCallback: function(server) {
+    middleware(CONFIG, { readyCallback: function(server) {
       server.stop();
       done();
     }});
   });
 
   it('Should contain expected elements', function (done) {
-    middleware.generator(CONFIG, { readyCallback: function(server) {
+    middleware(CONFIG, { readyCallback: function(server) {
       getManifest(server, function(err, manifest) {
         try {
           if (err) { throw err; }
@@ -212,7 +212,7 @@ describe('Initialization', function() {
       });
     }
 
-    middleware.generator(absolutePaths, { readyCallback: function(server) {
+    middleware(absolutePaths, { readyCallback: function(server) {
       getManifest(server, function(err, manifest) {
         try {
           server.stop();
@@ -260,7 +260,7 @@ describe('Observe Changes', function() {
 
   var server = null;
   beforeEach(function(done) {
-    middleware.generator(CONFIG, {
+    middleware(CONFIG, {
       catchupDelay: 0,
       updateListener: manifestWatcher.listener,
       fileListener: fileWatcher.listener,

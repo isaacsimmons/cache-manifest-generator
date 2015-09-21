@@ -45,10 +45,7 @@ function sortedSet() {
   return arr;
 }
 
-//Paths = array of paths to watch for changes
-//Each path is an object with a "file" property and any of the following optional properties: url, ignore, recurse, rewrite
-//Last argument can optionally be an "options" object
-function serveManifest(paths, opts) {
+module.exports = function (paths, opts) {
   if (! Array.isArray(paths)) {
     throw new Error('First argument must be array of paths to watch');
   }
@@ -209,14 +206,4 @@ function serveManifest(paths, opts) {
   };
 
   return serveResponse;
-}
-
-function nocache(req, res, next) {
-  res.setHeader('Cache-Control', 'no-cache');
-  next();
-}
-
-module.exports = {
-  nocache: nocache,
-  generator: serveManifest
 };
