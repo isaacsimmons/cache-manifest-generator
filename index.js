@@ -123,7 +123,9 @@ function serveManifest(paths, opts) {
           if (stat.isFile()) {
             var url = toUrl(evtPath);
             if (manifest['CACHE'].insert(url)) {
-              manifest['TIMESTAMP'] = stat.mtime;
+              if (stat.mtime > manifest['TIMESTAMP'] ) {
+                manifest['TIMESTAMP'] = stat.mtime;
+              }
               console.log('cache updated');
               opts['updateListener'](manifest);
             }
@@ -134,7 +136,9 @@ function serveManifest(paths, opts) {
             scanner.scandir(evtPath, {
               fileAction: function(filePath, filename, next, stat) {
                 if (manifest['CACHE'].insert(toUrl(filePath))) {
-                  manifest['TIMESTAMP'] = stat.mtime;
+                  if (stat.mtime > manifest['TIMESTAMP'] ) {
+                    manifest['TIMESTAMP'] = stat.mtime;
+                  }
                   anyAdded = true;
                 }
                 next();
@@ -153,7 +157,9 @@ function serveManifest(paths, opts) {
           if (stat.isFile()) { //Might it ever not be?
             var url = toUrl(evtPath);
             manifest['CACHE'].insert(url);
-            manifest['TIMESTAMP'] = stat.mtime;
+            if (stat.mtime > manifest['TIMESTAMP'] ) {
+              manifest['TIMESTAMP'] = stat.mtime;
+            }
             console.log('cache updated');
             opts['updateListener'](manifest);
           }
