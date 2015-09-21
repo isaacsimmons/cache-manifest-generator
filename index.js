@@ -165,7 +165,6 @@ function serveManifest(paths, opts) {
         checkReady();
       }
 
-      console.log('gonna watch ' + baseFilePath);
       watchr.watch({
         path: baseFilePath,
         listener: listener,
