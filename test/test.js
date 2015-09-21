@@ -304,15 +304,17 @@ describe('Observe Changes', function() {
     try {
       fs.mkdirSync(path.dirname(newFile));
       fileWatcher.wait('Timeout waiting for directory create event', function(err, evt, evtPath) {
-        if (err) { console.log('filewatcher timeout'); return done(err); }
+        if (err) { return done(err); }
         console.log('waited and got ' + evt + ', ' + evtPath);
         fs.writeFileSync(newFile, 'TEXT');
         manifestWatcher.wait('Timeout waiting for update after file creation', function(err, manifest) {
           if (err) { return done(err); }
           try {
-          assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
+            assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
             touch.sync(newFile);
             manifestWatcher.wait('Timeout waiting for update after file touch', function(err, manifest) {
+              //TODO: this fails if the catchupDelay is set too high. Even after the create event has fired,
+              //  watchr is still willing to swallow an adjacent update delete as belonging together
               if (err) { return done(err); }
               fs.unlinkSync(newFile);
               //Deleting a directory that is being watched in Windows crashes watchr!
