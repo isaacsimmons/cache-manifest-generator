@@ -103,51 +103,33 @@ function serveManifest(paths, opts) {
       return baseUrlPath + '/' + path.posix.format(path.parse(relPath));
     }
 
-    function onFile(filePath, stat, supressCallback) {
-      var modified = false;
-      if (manifest['CACHE'].insert(toUrl(filePath))) {
-        modified = true;
-      }
+    function onFile(filePath, stat) {
+      var newTimestamp = false;
       if (stat.mtime > manifest['TIMESTAMP'] ) {
         manifest['TIMESTAMP'] = stat.mtime;
-        modified = true;
+        newTimestamp = true;
       }
-      if (modified && (supressCallback !== true)) {
+
+      if (manifest['CACHE'].insert(toUrl(filePath)) || newTimestamp) {
         console.log('cache updated');
         updateListener(manifest);
       }
-      return modified;
     }
 
     function listener(evt, evtPath) {
-      if (evt === 'create') {
+      if (evt === 'create' || evt === 'update') {
         fs.stat(evtPath, function(err, stat) {
           if (stat.isFile()) {
             onFile(evtPath, stat);
-          } else if (stat.isDirectory()) {
-            var anyAdded = false;
+          } else if (stat.isDirectory() && evt === 'create') { //Do we even get "update" events for directories?
             //A file added too quickly after its directory is created can be skipped over, so we re-scan any newly
             //  added directories to catch those files
             scanner.scandir(evtPath, {
               fileAction: function(filePath, filename, next, stat) {
-                if (onFile(filePath, stat, true)) {
-                  anyAdded = true;
-                }
+                onFile(filePath, stat);
                 next();
-              },
-              next: function() {
-                if (anyAdded) {
-                  console.log('cache updated');
-                  updateListener(manifest);
-                }
               }
             });
-          }
-        });
-      } else if (evt === 'update') {
-        fs.stat(evtPath, function(err, stat) {
-          if (stat.isFile()) {
-            onFile(evtPath, stat);
           }
         });
       } else if (evt === 'delete') {
