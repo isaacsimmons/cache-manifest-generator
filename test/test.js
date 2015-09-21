@@ -77,32 +77,23 @@ function parseManifest(body) {
 }
 
 //Function to expect a callback to be called one occurrence at a time
-function callbackWatcher(defaultTimeout, noisy) {
+function callbackWatcher(defaultTimeout) {
   if (typeof defaultTimeout !== 'number') {
     defaultTimeout = 500;
-  }
-  if (typeof noisy !== 'boolean') {
-    noisy = true;
   }
   var updateCallback = null;
   var currentMsg = null;
 
   function updateListener() {
-    if (noisy) console.log('caught function with ' + arguments.length + ' (' + currentMsg + ')');
-    //if (noisy) console.log(arguments);
     if (typeof updateCallback === 'function') {
       var tmp = updateCallback;
-      console.log('clearing out (1) ' + currentMsg);
       updateCallback = null;
       currentMsg = null;
       tmp.apply(this, arguments);
-    } else {
-      if (noisy) console.log('but nowhere to pass it (' + currentMsg + '??)');
     }
   }
 
   function waitForUpdate(msg, callback, timeout) {
-    if (noisy) console.log('starting watch with ' + msg);
     currentMsg = msg;
     var outtaTime = false;
     if (typeof timeout !== 'number') {
@@ -110,26 +101,20 @@ function callbackWatcher(defaultTimeout, noisy) {
     }
 
     var timeoutId = setTimeout(function() {
-      console.log('clearing out (2) ' + msg);
       outtaTime = true;
       updateCallback = null;
       currentMsg = null;
       callback(new Error(msg));
     }, timeout);
 
-    if (noisy) console.log('about to set (' + msg + ')');
     updateCallback = function() {
       clearTimeout(timeoutId);
       if (! outtaTime) {
         outtaTime = true; //TODO: rename this
         Array.prototype.splice.call(arguments, 0, 0, null);
-        if (noisy) console.log('on time receipt of event (' + msg + ')');
         callback.apply(this, arguments);
-      } else {
-        if (noisy) console.log('got callback but it was too late. OUTTATIME');
       }
     };
-    if (noisy) console.log('update set (' + msg + ')');
   }
 
   return {
@@ -270,7 +255,7 @@ describe('Observe Changes', function() {
   after(deleteTempFiles);
 
   var manifestWatcher = callbackWatcher(500);
-  var fileWatcher = callbackWatcher(500, false);
+  var fileWatcher = callbackWatcher(500);
 
   var server = null;
   beforeEach(function(done) {
