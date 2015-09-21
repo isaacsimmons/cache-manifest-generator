@@ -300,7 +300,6 @@ describe('Observe Changes', function() {
     });
   });
 
-  //TODO: So many callbacks! Convert this to promises or something
   it('Should observe file creations and modifications to those new files', function(done) {
     try {
       fs.mkdirSync(path.dirname(newFile));
