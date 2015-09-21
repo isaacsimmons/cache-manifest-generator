@@ -58,19 +58,11 @@ function serveManifest(paths, opts) {
   if (! opts) {
     opts = {};
   }
-  //TODO: local variables instead of leaving them in opts? less opportunity for weirdness if people swap things around?
-  if (typeof opts['readyCallback'] !== 'function') {
-    opts['readyCallback'] = function() {};
-  }
-  if (typeof opts['updateListener'] !== 'function') {
-    opts['updateListener'] = function() {};
-  }
-  if (typeof opts['fileListener'] !== 'function') {
-    opts['fileListener'] = function() {};
-  }
-  if (typeof opts['catchupDelay'] !== 'number') {
-    opts['catchupDelay'] = 500;
-  }
+
+  var readyCallback = (typeof opts['readyCallback'] === 'function') ? opts['readyCallback'] : function() {};
+  var updateListener = (typeof opts['updateListener'] === 'function') ? opts['updateListener'] : function() {};
+  var fileListener = (typeof opts['fileListener'] === 'function') ? opts['fileListener'] : function() {};
+  var catchupDelay = (typeof opts['catchupDelay'] === 'number') ? opts['catchupDelay'] : 500;
 
   var manifest = {
     CACHE: sortedSet(),
@@ -84,7 +76,7 @@ function serveManifest(paths, opts) {
 
   function checkReady() {
     if (completedScans === paths.length && watchers.length === paths.length) {
-      opts['readyCallback'](serveResponse);
+      readyCallback(serveResponse);
     }
   }
 
@@ -122,7 +114,7 @@ function serveManifest(paths, opts) {
                 manifest['TIMESTAMP'] = stat.mtime;
               }
               console.log('cache updated');
-              opts['updateListener'](manifest);
+              updateListener(manifest);
             }
           } else if (stat.isDirectory()) {
             var anyAdded = false;
@@ -141,7 +133,7 @@ function serveManifest(paths, opts) {
               next: function() {
                 if (anyAdded) {
                   console.log('cache updated');
-                  opts['updateListener'](manifest);
+                  updateListener(manifest);
                 }
               }
             });
@@ -156,17 +148,17 @@ function serveManifest(paths, opts) {
               manifest['TIMESTAMP'] = stat.mtime;
             }
             console.log('cache updated');
-            opts['updateListener'](manifest);
+            updateListener(manifest);
           }
         });
       } else if (evt === 'delete') {
         var url = toUrl(evtPath);
         if (manifest['CACHE'].remove(url)) {
           console.log('cache updated');
-          opts['updateListener'](manifest);
+          updateListener(manifest);
         }
       }
-      opts['fileListener'](evt, evtPath);
+      fileListener(evt, evtPath);
     }
 
     fs.stat(filePath, function(err, stat) {
@@ -202,7 +194,7 @@ function serveManifest(paths, opts) {
           watchers.push(watcher);
           checkReady();
         },
-        catchupDelay: opts['catchupDelay']
+        catchupDelay: catchupDelay
       });
     });
   }
