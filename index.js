@@ -102,13 +102,8 @@ function serveManifest(paths, opts) {
     }
 
     filePath = path.format(path.parse(filePath));
-    //TODO: maybe turn all paths into absolute ones?
 
     function toUrl(orig) {
-      if (! orig.startsWith(filePath)) {
-        throw new Error('!!!!!!!!!!!!');
-      }
-      //console.log('converting ' + orig);
       var relPath = orig.substr(filePath.length);
       if (relPath.startsWith(path.sep)) {
         relPath = relPath.substr(path.sep.length);
