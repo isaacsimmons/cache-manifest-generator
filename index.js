@@ -1,7 +1,5 @@
 'use strict';
 
-//TODO: on initial scan, check for the latest timestamp so that re-initialization of the server doesn't needlessly bump the cache.manifest version?
-
 var path    = require('path');
 var fs      = require('fs');
 
@@ -117,13 +115,12 @@ function serveManifest(paths, opts) {
       }
       //Convert to /'s for URL in case the filePath has \ separators
       return urlPath + '/' + path.posix.format(path.parse(relPath));
-      //TODO: will this work for the case where the whole path is a single file instead of a directory?
     }
 
     function listener(evt, evtPath) {
       if (evt === 'create') {
         fs.stat(evtPath, function(err, stat) {
-          if (stat.isFile()) { //TODO: does this work for deleted items????
+          if (stat.isFile()) {
             var url = toUrl(evtPath);
             if (manifest['CACHE'].insert(url)) {
               manifest['TIMESTAMP'] = stat.mtime;
@@ -132,7 +129,6 @@ function serveManifest(paths, opts) {
             }
           } else if (stat.isDirectory()) {
             var anyAdded = false;
-            //var maxNestedMtime = null;
             //A file added too quickly after its directory is created can be skipped over, so we re-scan any newly
             //  added directories to catch those files
             scanner.scandir(evtPath, {
@@ -156,14 +152,13 @@ function serveManifest(paths, opts) {
         fs.stat(evtPath, function(err, stat) {
           if (stat.isFile()) { //Might it ever not be?
             var url = toUrl(evtPath);
-            manifest['CACHE'].insert(url);  //TODO: remove this? probably unnecessary but also harmless??
+            manifest['CACHE'].insert(url);
             manifest['TIMESTAMP'] = stat.mtime;
             console.log('cache updated');
             opts['updateListener'](manifest);
           }
         });
       } else if (evt === 'delete') {
-        //TODO: what to do with the timestamp here? Maybe just leave it?
         var url = toUrl(evtPath);
         if (manifest['CACHE'].remove(url)) {
           console.log('cache updated');
@@ -224,7 +219,6 @@ function serveManifest(paths, opts) {
     res.set('Cache-Control', 'no-cache');
     res.set('Content-Type', 'text/cache-manifest');
     res.write('CACHE MANIFEST\n');
-    //res.write('/json/lists.json\n');  //TODO: this
     for (var i = 0, len = manifest['CACHE'].length; i < len; i++) {
       res.write(manifest['CACHE'][i] + '\n');
     }
