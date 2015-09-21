@@ -278,27 +278,33 @@ describe('Observe Changes', function() {
   });
 
   it('Should observe modifications to watched files', function(done) {
-    touch('test_files/hello.txt');
-    manifestWatcher.wait('Timeout waiting for manifest update', function(err, manifest) {
-      if (err) { done(err); }
-      else { done(); }
-    });
+    setTimeout(function() {  //Need to wait a second or the file modify time may be unchanged
+      touch('test_files/hello.txt');
+      manifestWatcher.wait('Timeout waiting for manifest update', function(err, manifest) {
+        if (err) { done(err); }
+        else { done(); }
+      });
+    }, 1000);
   });
 
   it('Should observe modifications to files in watched directories', function(done) {
-    touch('test_files/some_files/a.txt');
-    manifestWatcher.wait('Timeout waiting for manifest update', function(err, manifest) {
-      if (err) { done(err); }
-      else { done(); }
-    });
+    setTimeout(function() {  //Need to wait a second or the file modify time may be unchanged
+      touch('test_files/some_files/a.txt');
+      manifestWatcher.wait('Timeout waiting for manifest update', function(err, manifest) {
+        if (err) { done(err); }
+        else { done(); }
+      });
+    }, 1000);
   });
 
   it('Should observe modifications to files in subdirectories', function(done) {
-    touch('test_files/some_files/nested/x.txt');
-    manifestWatcher.wait('Timeout waiting for manifest update', function(err, manifest) {
-      if (err) { done(err); }
-      else { done(); }
-    });
+    setTimeout(function() {  //Need to wait a second or the file modify time may be unchanged
+      touch('test_files/some_files/nested/x.txt');
+      manifestWatcher.wait('Timeout waiting for manifest update', function(err, manifest) {
+        if (err) { done(err); }
+        else { done(); }
+      });
+    }, 1000);
   });
 
   it('Should observe file creations and modifications to those new files', function(done) {
