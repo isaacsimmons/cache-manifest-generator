@@ -85,28 +85,35 @@ function callbackWatcher(defaultTimeout, noisy) {
     noisy = true;
   }
   var updateCallback = null;
+  var currentMsg = null;
 
   function updateListener() {
-    if (noisy) console.log('caught function with ' + arguments.length);
+    if (noisy) console.log('caught function with ' + arguments.length + ' (' + currentMsg + ')');
     //if (noisy) console.log(arguments);
     if (typeof updateCallback === 'function') {
-      updateCallback.apply(this, arguments);
+      var tmp = updateCallback;
+      console.log('clearing out (1) ' + currentMsg);
       updateCallback = null;
+      currentMsg = null;
+      tmp.apply(this, arguments);
     } else {
-      if (noisy) console.log('but nowhere to pass it');
+      if (noisy) console.log('but nowhere to pass it (' + currentMsg + '??)');
     }
   }
 
   function waitForUpdate(msg, callback, timeout) {
     if (noisy) console.log('starting watch with ' + msg);
+    currentMsg = msg;
     var outtaTime = false;
     if (typeof timeout !== 'number') {
       timeout = defaultTimeout;
     }
 
     var timeoutId = setTimeout(function() {
+      console.log('clearing out (2) ' + msg);
       outtaTime = true;
       updateCallback = null;
+      currentMsg = null;
       callback(new Error(msg));
     }, timeout);
 
