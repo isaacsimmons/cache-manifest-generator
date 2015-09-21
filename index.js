@@ -154,7 +154,7 @@ function serveManifest(paths, opts) {
         });
       } else if (evt === 'update') {
         fs.stat(evtPath, function(err, stat) {
-          if (stat.isFile()) { //Might it ever not be?
+          if (stat.isFile()) {
             var url = toUrl(evtPath);
             manifest['CACHE'].insert(url);
             if (stat.mtime > manifest['TIMESTAMP'] ) {
@@ -169,9 +169,6 @@ function serveManifest(paths, opts) {
         if (manifest['CACHE'].remove(url)) {
           console.log('cache updated');
           opts['updateListener'](manifest);
-        } else {
-          //Probably a directory??
-          //Maybe keep a list of directory names somewhere if I need them?
         }
       }
       opts['fileListener'](evt, evtPath);
