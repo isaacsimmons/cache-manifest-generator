@@ -71,6 +71,14 @@ function serveManifest(paths, opts) {
     TIMESTAMP: new Date(0)
   };
 
+  function updateTimestamp(date) {
+    if (date > manifest['TIMESTAMP']) {
+      manifest['TIMESTAMP'] = date;
+      return true;
+    }
+    return false;
+  }
+
   var watchers = [];
   var completedScans = 0;
 
@@ -104,12 +112,7 @@ function serveManifest(paths, opts) {
     }
 
     function onFile(filePath, stat) {
-      var newTimestamp = false;
-      if (stat.mtime > manifest['TIMESTAMP'] ) {
-        manifest['TIMESTAMP'] = stat.mtime;
-        newTimestamp = true;
-      }
-
+      var newTimestamp = updateTimestamp(stat.mtime);
       if (manifest['CACHE'].insert(toUrl(filePath)) || newTimestamp) {
         console.log('cache updated');
         updateListener(manifest);
@@ -147,9 +150,7 @@ function serveManifest(paths, opts) {
         scanner.scandir(baseFilePath, {
           fileAction: function(filePath, filename, next, stat) {
             manifest['CACHE'].insert(toUrl(filePath));
-            if (stat.mtime > manifest['TIMESTAMP'] ) {
-              manifest['TIMESTAMP'] = stat.mtime;
-            }
+            updateTimestamp(stat.mtime);
             next();
           },
           next: function() {
@@ -158,9 +159,7 @@ function serveManifest(paths, opts) {
           }
         });
       } else if (stat.isFile()) {
-        if (stat.mtime > manifest['TIMESTAMP'] ) {
-          manifest['TIMESTAMP']  = stat.mtime;
-        }
+        updateTimestamp(stat.mtime);
         manifest['CACHE'].insert(baseUrlPath);
         completedScans++;
         checkReady();
