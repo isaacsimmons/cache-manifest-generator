@@ -156,7 +156,7 @@ var INITIAL_URLS = [
 ];
 
 //Tests
-describe.skip('Check filesystem', function() {
+describe('Check filesystem', function() {
   it('Should contain expected files', function(done) {
     var count = 0;
     for(var i = 0; i < INITIAL_FILES.length; i++) {
@@ -177,7 +177,7 @@ describe.skip('Check filesystem', function() {
   });
 });
 
-describe.skip('Initialization', function() {
+describe('Initialization', function() {
   it('should initialize properly', function (done) {
     middleware.generator(CONFIG, { readyCallback: function(server) {
       server.stop();
@@ -276,7 +276,7 @@ describe('Observe Changes', function() {
     server = null;
   });
 
-  it.skip('Should observe modifications to watched files', function(done) {
+  it('Should observe modifications to watched files', function(done) {
     touch('test_files/hello.txt');
     manifestWatcher.wait('Timeout waiting for manifest update', function(err, manifest) {
       if (err) { done(err); }
@@ -284,7 +284,7 @@ describe('Observe Changes', function() {
     });
   });
 
-  it.skip('Should observe modifications to files in watched directories', function(done) {
+  it('Should observe modifications to files in watched directories', function(done) {
     touch('test_files/some_files/a.txt');
     manifestWatcher.wait('Timeout waiting for manifest update', function(err, manifest) {
       if (err) { done(err); }
@@ -292,7 +292,7 @@ describe('Observe Changes', function() {
     });
   });
 
-  it.skip('Should observe modifications to files in subdirectories', function(done) {
+  it('Should observe modifications to files in subdirectories', function(done) {
     touch('test_files/some_files/nested/x.txt');
     manifestWatcher.wait('Timeout waiting for manifest update', function(err, manifest) {
       if (err) { done(err); }
