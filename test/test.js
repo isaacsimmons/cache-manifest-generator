@@ -2,6 +2,7 @@
 
 var assert = require("assert");
 var fs = require('fs');
+var os = require('os');
 var path = require('path');
 var touch = require('touch');
 var middleware = require('../index.js');
@@ -318,7 +319,9 @@ describe('Observe Changes', function() {
               if (err) { return done(err); }
               fs.unlinkSync(newFile);
               //Deleting a directory that is being watched in Windows crashes watchr!
-              //fs.rmdirSync(path.dirname(newFile));
+              if (! os.platform().startsWith('win')) {
+                fs.rmdirSync(path.dirname(newFile));
+              }
               manifestWatcher.wait('Timeout waiting for update after file delete', function(err, manifest) {
                 if (err) { return done(err); }
                 try {
