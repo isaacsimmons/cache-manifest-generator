@@ -6,7 +6,7 @@
   "homepage": "https://github.com/isaacsimmons/cache-manifest-generator",
   "repository": {
     "type": "git",
-    "url": "https://github.com/isaacsimmons/cache-manifest-generator.git"
+    "url": "git+https://github.com/isaacsimmons/cache-manifest-generator.git"
   },
   "bugs": {
     "url": "https://github.com/isaacsimmons/cache-manifest-generator/issues"
@@ -30,5 +30,9 @@
     "appcache",
     "express",
     "connect"
-  ]
+  ],
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  }
 }
