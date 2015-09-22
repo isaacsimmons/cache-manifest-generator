@@ -63,9 +63,9 @@ module.exports = function (paths, opts) {
 
   var manifest = {
     CACHE: sortedSet(),
-    NETWORK: [],
-    FALLBACK: [],
-    TIMESTAMP: new Date(0)
+    NETWORK: Array.isArray(opts['network']) ? opts['network'].slice() : ['*'],
+    FALLBACK: Array.isArray(opts['fallback']) ? opts['fallback'].slice() : [],
+    TIMESTAMP: null
   };
 
   function updateTimestamp(date) {
@@ -180,25 +180,29 @@ module.exports = function (paths, opts) {
   }
 
   function serveResponse(req, res) {
-    //TODO: take a template of some kind? (nah, just read network/fallback/etc from opts
     res.set('Cache-Control', 'no-cache');
     res.set('Content-Type', 'text/cache-manifest');
     res.write('CACHE MANIFEST\n');
     for (var i = 0, len = manifest['CACHE'].length; i < len; i++) {
       res.write(manifest['CACHE'][i] + '\n');
     }
-    res.write('\nNETWORK:\n*\n\n');
-    //TODO: NETWORK and FALLBACK based on vars
-
-    //Drop milliseconds since filesystem mtimes only report second accuracy
-    var timeString = manifest['TIMESTAMP'].toISOString();
-    timeString = timeString.substring(0, timeString.length - 5) + 'Z';
-    res.write('#Updated: ' + timeString);
+    if (manifest['NETWORK'].length > 0) {
+      res.write('\nNETWORK:\n' + manifest['NETWORK'].join('\n') + '\n');
+    }
+    if (manifest['FALLBACK'].length > 0) {
+      res.write('\nFALLBACK:\n' + manifest['FALLBACK'].join('\n') + '\n');
+    }
+    if (manifest['TIMESTAMP'] !== null) {
+      //Drop millisecond accuracy since filesystem mtimes only report second accuracy
+      var timeString = manifest['TIMESTAMP'].toISOString();
+      timeString = timeString.substring(0, timeString.length - 5) + 'Z';
+      res.write('\n#Updated: ' + timeString + '\n');
+    }
     res.end();
   }
 
   serveResponse['stop'] = function() {
-    console.log('Stopping manifest generator filesystem watches');
+    //TODO: lock it all down?
     for (var i = 0; i < watchers.length; i++) {
       watchers[i].close();
     }
