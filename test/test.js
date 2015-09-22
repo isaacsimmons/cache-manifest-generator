@@ -171,7 +171,7 @@ var INITIAL_URLS = [
 
 //Tests
 describe('Check filesystem', function() {
-  it('Should contain expected files', function(done) {
+  it('Should contain expected initial test files', function(done) {
     var count = 0;
     for(var i = 0; i < INITIAL_FILES.length; i++) {
       var filePath = INITIAL_FILES[i];
@@ -330,7 +330,7 @@ describe('Observe Changes', function() {
     }, 1000);
   });
 
-  it('Should observe modifications to files in subdirectories', function(done) {
+  it('Should observe modifications to files in watched subdirectories', function(done) {
     setTimeout(function() {  //Need to wait a second or the file modify time may be unchanged
       touch('test_files/some_files/nested/x.txt');
       manifestWatcher.wait('Timeout waiting for manifest update', function(err, manifest) {
@@ -340,7 +340,7 @@ describe('Observe Changes', function() {
     }, 1000);
   });
 
-  it('Should observe file creations and modifications to those new files', function(done) {
+  it('Should observe creations/modifications/deletions of files in newly created subdirectories', function(done) {
     try {
       fs.mkdirSync(path.dirname(newFile));
       fileWatcher.wait('Timeout waiting for directory create event', function(err, evt, evtPath) {
