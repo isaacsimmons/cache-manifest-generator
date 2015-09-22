@@ -1,6 +1,6 @@
 {
   "name": "cache-manifest-generator",
-  "description": "Connect middleware plugin to dynamically generate an HTML5 application cache manifest for development servers",
+  "description": "Connect/Express plugin to dynamically generate an HTML5 application cache manifest for development servers",
   "version": "0.3.0",
   "author": "Isaac Simmons <isaac.simmons@gmail.com>",
   "homepage": "https://github.com/isaacsimmons/cache-manifest-generator",
