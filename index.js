@@ -113,6 +113,7 @@ module.exports = function (paths, opts) {
     function listener(evt, evtPath) {
       if (evt === 'create' || evt === 'update') {
         fs.stat(evtPath, function(err, stat) {
+          if (err) { console.error(err); return; }
           if (stat.isFile()) {
             onFile(evtPath, stat);
           } else if (stat.isDirectory() && evt === 'create') { //Do we even get "update" events for directories?
@@ -160,6 +161,7 @@ module.exports = function (paths, opts) {
         path: baseFilePath,
         listener: listener,
         next: function(err, watcher) {
+          if (err) { throw err; }
           watchers.push(watcher);
           checkReady();
         },
