@@ -192,6 +192,8 @@ describe('Check filesystem', function() {
 });
 
 describe('Initialization', function() {
+  var defaultNetworkConfig = ['*'];
+
   it('Should initialize properly', function (done) {
     middleware(CONFIG, { readyCallback: function(server) {
       server.stop();
@@ -200,7 +202,6 @@ describe('Initialization', function() {
   });
 
   it('Should contain expected elements', function (done) {
-    var defaultNetworkConfig = ['*'];
     var fallbackCOnfig = ['fallback1', 'fallback2'];
 
     middleware(CONFIG, { fallback: fallbackCOnfig, readyCallback: function(server) {
@@ -233,7 +234,7 @@ describe('Initialization', function() {
         try {
           server.stop();
           if (err) { return done(err); }
-          assert.deepEqual(manifest['NETWORK'], ['*'], 'Network section doesn\'t hold expected value'); //TODO: pull this from opts
+          assert.deepEqual(manifest['NETWORK'], defaultNetworkConfig, 'Network section doesn\'t hold expected value');
           assert.deepEqual(manifest['CACHE'], INITIAL_URLS, 'Cache section doesn\'t hold expected value(s)');
           done();
         } catch (err) {
