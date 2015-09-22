@@ -20,20 +20,43 @@ Finally, `Cache-Control: no-cache` headers should be sent along with all resourc
 
 ## Usage ##
 
-There are two arguments to the manifest generator.
-The first argument is an array of pathes to watch, the second optional argument is an object containging additional parameters.
+    var express = require('express');
+    var manifest = require('cache-manifest-generator');
 
-Paths looks like:
+    var app = express();
+    var generator = manifest(paths, config);
+    app.get('/cache.manifest', generator);
 
-Options include:
+### paths ###
 
+The first argument must be an array containing one or more paths to include in the main CACHE portion of the manifest.
+Each path must be an object with a `file` property that specifies either a relative or an absolute path to a file or directory.
+If it is a directory, then any files contained within it (and its subdirectories, recursively) will be included.
+Additionally, each path may contain a `url` property that specifies where the files will be made available in the site.
+If the `file` path is relative and the `url` is omitted, they will be assumed to be the same.
+
+### config ###
+
+The second argument is an optional config object that supports the following (optional) keys:
+
+* `readyCallback`: Callback function called once when the initial directory scan has completed. The callback gets one argument `(generator)` -- the same object as the manifest return value. The server will function before this event has been fired, but may not contain all manifest entries yet.
+* `updateListener`: Callback function called after every update to the manifest file. The callback gets one argument `(manifest)`, an object with `CACHE`, `FALLBACK`, `NETWORK`, `COMMENT`, and `TIMESTAMP` properties.
+* `fileListener`: Callback function called after every filesystem change in an observed directory, whether or not the change triggers a modification to the manifest file. The callback gets two arguments `(evt, evtPath)`. The first is `'update'`, `'create'`, or `'delete'`, and the second is the path to the file or directory.
+* `catchupDelay`: Number of milliseconds to wait after filesystem events during which things like the creation of editor temp files will be ignored (default: `500`) (see [watchr](https://github.com/bevry/watchr))
+* `network`: An array of strings to include in the `NETWORK:` portion of the manifest file. (default: `['*']`)
+* `fallback`: An array of strings to include in the `FALLBACK:` portion of the manifest file. (default: `[]`)
+
+### return ###
+
+Connect/express plugin. A function with that takes two arguments `(req, res)` and serves the cache manifest in response to all requests.
+It will set the headers `Cache-Control: no-cache` and `Content-Type: text/cache-manifest`.
 
 ## Example ##
 
 An example server using express and serving static content out of two different locations
 
     var express = require('express');
-    var manifest = require('cache-manifest-middleware');
+    var manifest = require('cache-manifest-generator');
 
     var app = express();
 
