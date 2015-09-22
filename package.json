@@ -1,15 +1,15 @@
 {
-  "name": "cache-manifest-middleware",
-  "description": "Connect middleware plugin for dynamic generation of application cache manifest",
-  "version": "0.2.0",
+  "name": "cache-manifest-generator",
+  "description": "Connect middleware plugin to dynamically generate an HTML5 application cache manifest for development servers",
+  "version": "0.3.0",
   "author": "Isaac Simmons <isaac.simmons@gmail.com>",
-  "homepage": "https://github.com/isaacsimmons/cache-manifest-middleware",
+  "homepage": "https://github.com/isaacsimmons/cache-manifest-generator",
   "repository": {
     "type": "git",
-    "url": "https://github.com/isaacsimmons/cache-manifest-middleware.git"
+    "url": "https://github.com/isaacsimmons/cache-manifest-generator.git"
   },
   "bugs": {
-    "url": "https://github.com/isaacsimmons/cache-manifest-middleware/issues"
+    "url": "https://github.com/isaacsimmons/cache-manifest-generator/issues"
   },
   "dependencies": {
     "watchr": "2.x",
