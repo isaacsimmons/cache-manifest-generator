@@ -180,6 +180,10 @@ module.exports = function (paths, opts) {
   }
 
   function serveResponse(req, res) {
+    if (manifest === null) {
+      res.status(500).send('Manifest generator offline');
+      return;
+    }
     res.set('Cache-Control', 'no-cache');
     res.set('Content-Type', 'text/cache-manifest');
     res.write('CACHE MANIFEST\n');
@@ -202,11 +206,14 @@ module.exports = function (paths, opts) {
   }
 
   serveResponse['stop'] = function() {
-    //TODO: lock it all down?
     for (var i = 0; i < watchers.length; i++) {
       watchers[i].close();
     }
-    watchers = [];
+    watchers = null;
+    manifest = null;
+    readyCallback = null;
+    updateListener = null;
+    fileListener = null;
   };
 
   return serveResponse;

@@ -12,33 +12,46 @@ function getManifest(server, callback) {
   var buf = [];
   var ccHeader = null;
   var ctHeader = null;
+  var statusCode = null;
+
+  function status(num) {
+    statusCode = num;
+    return mockResponse;
+  }
+
+  function write(s) {
+    if (typeof s === 'string') {
+      buf.push(s);
+    }
+  }
+
+  function end(s) {
+    write(s);
+    var body = buf.join('');
+    try {
+      assert.equal(ccHeader, 'no-cache', 'Cache-Control header should be no-cache');
+      assert.equal(ctHeader, 'text/cache-manifest', 'Content-Type header should be text/cache-manifest');
+      var manifest = parseManifest(body);
+      callback(null, manifest, statusCode);
+    } catch(err) {
+      callback(err, body, statusCode);
+    }
+  }
+
+  function set(name, value) {
+    if (name === 'Cache-Control') {
+      ccHeader = value;
+    } else if (name === 'Content-Type') {
+      ctHeader = value;
+    }
+  }
 
   var mockResponse = {
-    end: function(s) {
-      if (typeof s === 'string') {
-        buf.push(s);
-      }
-      try {
-        assert.equal(ccHeader, 'no-cache', 'Cache-Control header should be no-cache');
-        assert.equal(ctHeader, 'text/cache-manifest', 'Content-Type header should be text/cache-manifest');
-        var manifest = parseManifest(buf.join(''));
-        callback(null, manifest);
-      } catch(err) {
-        callback(err);
-      }
-    },
-    write: function(s) {
-      if (typeof s === 'string') {
-        buf.push(s);
-      }
-    },
-    set: function(name, value) {
-      if (name === 'Cache-Control') {
-        ccHeader = value;
-      } else if (name === 'Content-Type') {
-        ctHeader = value;
-      }
-    }
+    status: status,
+    end: end,
+    send: end,
+    write: write,
+    set: set
   };
 
   server(null, mockResponse);
@@ -179,7 +192,7 @@ describe('Check filesystem', function() {
 });
 
 describe('Initialization', function() {
-  it('should initialize properly', function (done) {
+  it('Should initialize properly', function (done) {
     middleware(CONFIG, { readyCallback: function(server) {
       server.stop();
       done();
@@ -230,6 +243,24 @@ describe('Initialization', function() {
       });
     }});
   });
+
+  it('Should stop responding once stopped', function (done) {
+    middleware(CONFIG, { readyCallback: function(server) {
+      server.stop();
+      getManifest(server, function(err, manifest, status) {
+        try {
+          assert.equal(Math.floor(status / 100), 5, 'Response code should indicate server error after having been stopped');
+          assert(typeof manifest === 'string', 'Error page shouldn\'t be valid manifest file');
+          done();
+
+        } catch (err) {
+          done(err);
+        }
+      });
+    }});
+  });
+
+
 });
 
 describe('Observe Changes', function() {
