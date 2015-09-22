@@ -8,10 +8,11 @@ Dynamically generating the cache manifest file and marking it with a last modifi
 This can be accomplished efficiently by observing a set of files and directories for changes and serving manifest directly from memory.
 This monitoring updates in realtime as a part of the same node process as your server and can watch multiple folders recursively for modifications, creations, and deletions.
 
-This is intended for use during development only.
-A deployed application ought not need such frequent change monitoring.
-You may also want to use some manner of application cache event monitoring such as [AppCache Nanny](https://github.com/gr2m/appcache-nanny) or <https://jonathanstark.com/blog/debugging-html-5-offline-application-cache>.
-Finally, Cache-Control headers should probably be sent along with all resources served so as to avoid conflicts between the Offline Cache and regular HTTP caching mechanisms.
+### Disclaimers ###
+
+This is intended for use during development only as deployed applications will not require such frequent change monitoring.
+You may also want to use some manner of client-side JavaScript application cache event monitoring such as [AppCache Nanny](https://github.com/gr2m/appcache-nanny) or <https://jonathanstark.com/blog/debugging-html-5-offline-application-cache> in order to monitor and manage update events.
+Finally, `Cache-Control: no-cache` headers should be sent along with all resources served so as to avoid conflicts between the HTML5 Offline Cache and regular HTTP caching mechanisms.
 
 ## Installation ##
 
