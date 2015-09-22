@@ -46,15 +46,9 @@ function sortedSet() {
 }
 
 module.exports = function (paths, opts) {
-  if (! Array.isArray(paths)) {
-    throw new Error('First argument must be array of paths to watch');
-  }
-  if (paths.length === 0) {
-    throw new Error('Must provide at least one path to watch');
-  }
-  if (! opts) {
-    opts = {};
-  }
+  if (! Array.isArray(paths)) { throw new Error('First argument must be array of paths to watch'); }
+  if (paths.length === 0) { throw new Error('Must provide at least one path to watch'); }
+  if (! opts) { opts = {}; }
 
   var readyCallback = typeof opts['readyCallback'] === 'function' ? opts['readyCallback'] : function() {};
   var updateListener = typeof opts['updateListener'] === 'function' ? opts['updateListener'] : function() {};
