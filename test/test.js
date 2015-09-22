@@ -258,8 +258,6 @@ describe('Initialization', function() {
       });
     }});
   });
-
-
 });
 
 describe('Observe Changes', function() {
