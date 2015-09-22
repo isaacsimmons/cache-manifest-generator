@@ -45,20 +45,20 @@ function sortedSet() {
   return arr;
 }
 
-module.exports = function (paths, opts) {
+module.exports = function (paths, config) {
   if (! Array.isArray(paths)) { throw new Error('First argument must be array of paths to watch'); }
   if (paths.length === 0) { throw new Error('Must provide at least one path to watch'); }
-  if (! opts) { opts = {}; }
+  if (! config) { config = {}; }
 
-  var readyCallback = typeof opts['readyCallback'] === 'function' ? opts['readyCallback'] : function() {};
-  var updateListener = typeof opts['updateListener'] === 'function' ? opts['updateListener'] : function() {};
-  var fileListener = typeof opts['fileListener'] === 'function' ? opts['fileListener'] : function() {};
-  var catchupDelay = typeof opts['catchupDelay'] === 'number' ? opts['catchupDelay'] : 500;
+  var readyCallback = typeof config['readyCallback'] === 'function' ? config['readyCallback'] : function() {};
+  var updateListener = typeof config['updateListener'] === 'function' ? config['updateListener'] : function() {};
+  var fileListener = typeof config['fileListener'] === 'function' ? config['fileListener'] : function() {};
+  var catchupDelay = typeof config['catchupDelay'] === 'number' ? config['catchupDelay'] : 500;
 
   var manifest = {
     CACHE: sortedSet(),
-    NETWORK: Array.isArray(opts['network']) ? opts['network'].slice() : ['*'],
-    FALLBACK: Array.isArray(opts['fallback']) ? opts['fallback'].slice() : [],
+    NETWORK: Array.isArray(config['network']) ? config['network'].slice() : ['*'],
+    FALLBACK: Array.isArray(config['fallback']) ? config['fallback'].slice() : [],
     TIMESTAMP: null
   };
 
