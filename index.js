@@ -105,7 +105,6 @@ module.exports = function (paths, opts) {
     function onFile(filePath, stat) {
       var newTimestamp = updateTimestamp(stat.mtime);
       if (manifest['CACHE'].insert(toUrl(filePath)) || newTimestamp) {
-        console.log('cache updated');
         updateListener(manifest);
       }
     }
@@ -129,7 +128,6 @@ module.exports = function (paths, opts) {
         });
       } else if (evt === 'delete') {
         if (manifest['CACHE'].remove(toUrl(evtPath))) {
-          console.log('cache updated');
           updateListener(manifest);
         }
       }
