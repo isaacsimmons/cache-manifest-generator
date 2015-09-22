@@ -1,6 +1,6 @@
 # Cache Manifest Middleware #
 
-This [connect](https://github.com/senchalabs/connect)/[express](http://expressjs.com/) middleware component is intended to make development of HTML5 offline apps easier.
+This [connect](https://github.com/senchalabs/connect) / [express](http://expressjs.com/) middleware component is intended to make development of HTML5 offline apps easier.
 
 When using an offline cache.manifest, the browser will not request new versions of site resources unless the manifest file itself is updated.
 Dynamically generating the cache manifest file and marking it with a last modified timestamp can simplify the development process.
