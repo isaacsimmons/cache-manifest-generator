@@ -205,16 +205,15 @@ describe('Initialization', function() {
 
     middleware(CONFIG, { fallback: fallbackCOnfig, readyCallback: function(server) {
       getManifest(server, function(err, manifest) {
+        server.stop();
+        if (err) { return done(err); }
         try {
-          if (err) { throw err; }
           assert.deepEqual(manifest['NETWORK'], defaultNetworkConfig, 'Network section doesn\'t hold expected default value');
           assert.deepEqual(manifest['FALLBACK'], fallbackCOnfig, 'Fallback section doesn\'t hold expected value');
           assert.deepEqual(manifest['CACHE'], INITIAL_URLS, 'Cache section doesn\'t hold expected values');
           done();
         } catch (err) {
           done(err);
-        } finally {
-          server.stop();
         }
       });
     }});
