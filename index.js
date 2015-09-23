@@ -87,11 +87,24 @@ module.exports = function (paths, config) {
       throw new Error('Path object must contain a "file" property');
     }
     var baseFilePath = p['file'];
-    var baseUrlPath = p['url'] || p['file'];
-    if (! baseUrlPath.startsWith('/')) {  //Make sure URL starts with /
+    baseFilePath = path.format(path.parse(baseFilePath)); //Make sure filePath uses OS native separators
+
+    var baseUrlPath;
+    if (typeof p['url'] === 'string') {
+      baseUrlPath = p['url'] || p['file']
+    } else if (! path.isAbsolute(p['file'])) {
+      baseUrlPath = p['file'];
+    } else {
+      throw new Error('URL must be specified when an absolute file path is given: ' + p['file']);
+    }
+
+    //Make sure URL starts with /  but doesn't contain a trailing /
+    if (! baseUrlPath.startsWith('/')) {
       baseUrlPath = '/' + baseUrlPath;
     }
-    baseFilePath = path.format(path.parse(baseFilePath)); //Make sure filePath uses OS native separators
+    if (baseUrlPath.endsWith('/')) {
+      baseUrlPath = baseUrlPath.substring(0, baseUrlPath.length - 1);
+    }
 
     function toUrl(filePath) {
       var relPath = filePath.substr(baseFilePath.length);
