@@ -109,13 +109,13 @@ function callbackWatcher(defaultTimeout) {
 
   function waitForUpdate(msg, callback, timeout) {
     currentMsg = msg;
-    var outtaTime = false;
+    var timedout = false;
     if (typeof timeout !== 'number') {
       timeout = defaultTimeout;
     }
 
     var timeoutId = setTimeout(function() {
-      outtaTime = true;
+      timedout = true;
       updateCallback = null;
       currentMsg = null;
       callback(new Error(msg));
@@ -123,8 +123,7 @@ function callbackWatcher(defaultTimeout) {
 
     updateCallback = function() {
       clearTimeout(timeoutId);
-      if (! outtaTime) {
-        outtaTime = true; //TODO: rename this
+      if (! timedout) {
         Array.prototype.splice.call(arguments, 0, 0, null);
         callback.apply(this, arguments);
       }
