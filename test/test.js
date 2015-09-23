@@ -217,6 +217,39 @@ describe('Initialization', function() {
     }});
   });
 
+  it('Should not contain ignored files', function (done) {
+    var configWithIgnores = [];
+    for (var i = 0; i < CONFIG.length; i++) {
+      configWithIgnores.push({
+        file: CONFIG[i]['file'],
+        url: CONFIG[i]['url'],
+        ignore: /[x-z].txt/
+      });
+    }
+
+    var filteredUrls = [
+      '/hello.txt',
+      '/some/a.txt',
+      '/test_files/more_files/1.txt',
+      '/test_files/more_files/2.txt'
+    ];
+
+    middleware(configWithIgnores, { readyCallback: function(server) {
+      getManifest(server, function(err, manifest) {
+        server.stop();
+        if (err) { return done(err); }
+        try {
+          assert.deepEqual(manifest['NETWORK'], defaultNetworkConfig, 'Network section doesn\'t hold expected default value');
+          assert(! ('FALLBACK' in manifest), 'Fallback section should be empty');
+          assert.deepEqual(manifest['CACHE'], filteredUrls, 'Cache section doesn\'t hold expected values');
+          done();
+        } catch (err) {
+          done(err);
+        }
+      });
+    }});
+  });
+
   it('Should contain expected elements when configured with absolute paths', function (done) {
     var absolutePaths = [];
     for (var i = 0; i < CONFIG.length; i++) {

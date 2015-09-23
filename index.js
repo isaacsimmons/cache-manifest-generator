@@ -115,6 +115,8 @@ module.exports = function (paths, config) {
       baseUrlPath = baseUrlPath.substring(0, baseUrlPath.length - 1);
     }
 
+    var ignore = p['ignore'] instanceof RegExp ? p['ignore'] : /$./;  //If no ignore pattern is given, use one that matches nothing
+
     function toUrl(filePath) {
       var relPath = filePath.substr(baseFilePath.length);
       if (relPath.startsWith(path.sep)) {
@@ -125,6 +127,7 @@ module.exports = function (paths, config) {
     }
 
     function onFile(filePath, stat) {
+      if (filePath.match(ignore)) { return; }
       var newTimestamp = updateTimestamp(stat.mtime);
       if (manifest['CACHE'].insert(toUrl(filePath)) || newTimestamp) {
         updateListener(manifest);
@@ -132,6 +135,7 @@ module.exports = function (paths, config) {
     }
 
     function listener(evt, evtPath) {
+      if (evtPath.match(ignore)) { return; }
       if (evt === 'create' || evt === 'update') {
         fs.stat(evtPath, function(err, stat) {
           if (err) { console.error(err); return; }
@@ -161,8 +165,10 @@ module.exports = function (paths, config) {
       if (stat.isDirectory()) {
         scanner.scandir(baseFilePath, {
           fileAction: function(filePath, filename, next, stat) {
-            manifest['CACHE'].insert(toUrl(filePath));
-            updateTimestamp(stat.mtime);
+            if (! filePath.match(ignore)) {
+              manifest['CACHE'].insert(toUrl(filePath));
+              updateTimestamp(stat.mtime);
+            }
             next();
           },
           next: function() {
@@ -171,8 +177,12 @@ module.exports = function (paths, config) {
           }
         });
       } else if (stat.isFile()) {
-        updateTimestamp(stat.mtime);
-        manifest['CACHE'].insert(baseUrlPath);
+        if (baseFilePath.match(ignore)) {
+          console.warn('Path ' + baseFilePath + ' points to a single file, but it is ignored by the pattern ' + ignore);
+        } else {
+          updateTimestamp(stat.mtime);
+          manifest['CACHE'].insert(baseUrlPath);
+        }
         completedScans++;
         checkReady();
       }
