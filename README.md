@@ -34,6 +34,7 @@ Each path must be an object with a `file` property that specifies either a relat
 If it is a directory, then any files contained within it (and its subdirectories, recursively) will be included.
 Additionally, each path may contain a `url` property that specifies where the files will be made available in the site.
 If the `file` path is relative and the `url` is omitted, they will be assumed to be the same.
+Finally, each path may contain an `ignore` property which, if it contains a RegExp, will omit any files matching this pattern from the results.
 
 ### config ###
 
@@ -68,13 +69,15 @@ An example server using express and serving static content out of two different 
 
     app.get('/cache.manifest', manifest([
       { file: 'transpiler_output', url: '/js' },
-      { file: 'site', url: '/' }
+      { file: 'site', url: '/', ignore: /\.template/ }
     ]));
 
     app.use(express.static('site'));
     app.use('/js', express.static('transpiler_output'));
 
     app.listen(8000);
+
+For this file and other usage examples, look in `./examples/` or `./test/test.js`.
 
 ## Tests ##
 

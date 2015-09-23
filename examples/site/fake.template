@@ -1,0 +1,2 @@
+<<I guess this>> is supposed to be $(Some) kind {{ of.templating.language }}
+<% But is actually just %> fake test <%=data%>
