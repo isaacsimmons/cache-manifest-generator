@@ -83,4 +83,3 @@ Run the [Mocha](https://mochajs.org/)-based tests with `npm test`.
 ## License ##
 
 MIT
-
