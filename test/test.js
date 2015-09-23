@@ -85,8 +85,6 @@ function parseManifest(body) {
     }
   }
 
-  assert.deepEqual(manifest['CACHE'].slice().sort(), manifest['CACHE'], 'Cache entries should be soted');
-
   return manifest;
 }
 
@@ -151,7 +149,7 @@ var CONFIG = [{
 var INITIAL_FILES = [
   'test_files/hello.txt',
   'test_files/some_files/a.txt',
-  'test_files/some_files/b.txt',
+  'test_files/some_files/z.txt',
   'test_files/some_files/nested/x.txt',
   'test_files/some_files/nested/y.txt',
   'test_files/more_files/1.txt',
@@ -161,7 +159,7 @@ var INITIAL_FILES = [
 var INITIAL_URLS = [
   '/hello.txt',
   '/some/a.txt',
-  '/some/b.txt',
+  '/some/z.txt',
   '/some/nested/x.txt',
   '/some/nested/y.txt',
   '/test_files/more_files/1.txt',

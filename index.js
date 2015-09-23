@@ -9,16 +9,25 @@ var scanner = require('scandirectory');
 function sortedSet() {
   var arr = [];
 
+  function compare(p1, p2) {
+    var d1 = path.dirname(p1);
+    var d2 = path.dirname(p2);
+    if (d1 !== d2) {
+      return d1 < d2;
+    }
+    return p1 < p2;
+  }
+
   function indexOf(val) {
     var min = 0, max = arr.length - 1;
     while (min <= max) {
       var cur = (min + max) / 2 | 0;
-      if (arr[cur] < val) {
+      if (compare(arr[cur], val)) {
         min = cur + 1;
-      } else if (arr[cur] > val) {
-        max = cur - 1;
-      } else {
+      } else if (arr[cur] === val) {
         return cur;
+      } else {
+        max = cur - 1;
       }
     }
     return ~max;
