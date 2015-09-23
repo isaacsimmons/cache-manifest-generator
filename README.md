@@ -69,14 +69,12 @@ An example server using express and serving static content out of two different 
     app.get('/cache.manifest', manifest([
       { file: 'transpiler_output', url: '/js' },
       { file: 'site', url: '/' }
-    ]);
+    ]));
 
     app.use(express.static('site'));
     app.use('/js', express.static('transpiler_output'));
 
     app.listen(8000);
-
-    //TODO: test this sample code
 
 ## Tests ##
 
@@ -85,3 +83,4 @@ Run the [Mocha](https://mochajs.org/)-based tests with `npm test`.
 ## License ##
 
 MIT
+
