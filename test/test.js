@@ -135,35 +135,35 @@ function callbackWatcher(defaultTimeout) {
 }
 
 var CONFIG = [{
-    file: 'test_files/some_files',
+    file: 'test/files/some_files',
     url: 'some'
   }, {
-    file: 'test_files/more_files',
-    url: 'test_files/more_files'
+    file: 'test/files/more_files',
+    url: 'files/more_files'
   }, {
-    file: 'test_files/hello.txt',
+    file: 'test/files/hello.txt',
     url: 'hello.txt'
   }
 ];
 
 var INITIAL_FILES = [
-  'test_files/hello.txt',
-  'test_files/some_files/a.txt',
-  'test_files/some_files/z.txt',
-  'test_files/some_files/nested/x.txt',
-  'test_files/some_files/nested/y.txt',
-  'test_files/more_files/1.txt',
-  'test_files/more_files/2.txt'
+  'test/files/hello.txt',
+  'test/files/some_files/a.txt',
+  'test/files/some_files/z.txt',
+  'test/files/some_files/nested/x.txt',
+  'test/files/some_files/nested/y.txt',
+  'test/files/more_files/1.txt',
+  'test/files/more_files/2.txt'
 ];
 
 var INITIAL_URLS = [
   '/hello.txt',
+  '/files/more_files/1.txt',
+  '/files/more_files/2.txt',
   '/some/a.txt',
   '/some/z.txt',
   '/some/nested/x.txt',
-  '/some/nested/y.txt',
-  '/test_files/more_files/1.txt',
-  '/test_files/more_files/2.txt'
+  '/some/nested/y.txt'
 ];
 
 //Tests
@@ -229,9 +229,9 @@ describe('Initialization', function() {
 
     var filteredUrls = [
       '/hello.txt',
-      '/some/a.txt',
-      '/test_files/more_files/1.txt',
-      '/test_files/more_files/2.txt'
+      '/files/more_files/1.txt',
+      '/files/more_files/2.txt',
+      '/some/a.txt'
     ];
 
     middleware(configWithIgnores, { readyCallback: function(server) {
@@ -292,7 +292,7 @@ describe('Initialization', function() {
 });
 
 describe('Observe Changes', function() {
-  var newFile = 'test_files/some_files/new_dir/1.txt';
+  var newFile = 'test/files/some_files/new_dir/1.txt';
   var newUrl = '/some/new_dir/1.txt';
 
   function deleteTempFiles() {
@@ -342,7 +342,7 @@ describe('Observe Changes', function() {
 
   it('Should observe modifications to watched files', function(done) {
     setTimeout(function() {  //Need to wait a second or the file modify time may be unchanged
-      touch('test_files/hello.txt');
+      touch('test/files/hello.txt');
       manifestWatcher.wait('Timeout waiting for manifest update', function(err, manifest) {
         if (err) { done(err); }
         else { done(); }
@@ -352,7 +352,7 @@ describe('Observe Changes', function() {
 
   it('Should observe modifications to files in watched directories', function(done) {
     setTimeout(function() {  //Need to wait a second or the file modify time may be unchanged
-      touch('test_files/some_files/a.txt');
+      touch('test/files/some_files/a.txt');
       manifestWatcher.wait('Timeout waiting for manifest update', function(err, manifest) {
         if (err) { done(err); }
         else { done(); }
@@ -362,7 +362,7 @@ describe('Observe Changes', function() {
 
   it('Should observe modifications to files in watched subdirectories', function(done) {
     setTimeout(function() {  //Need to wait a second or the file modify time may be unchanged
-      touch('test_files/some_files/nested/x.txt');
+      touch('test/files/some_files/nested/x.txt');
       manifestWatcher.wait('Timeout waiting for manifest update', function(err, manifest) {
         if (err) { done(err); }
         else { done(); }
