@@ -71,6 +71,11 @@ module.exports = function (paths, config) {
     TIMESTAMP: null
   };
 
+  var permanentCache = Array.isArray(config['cache']) ? config['cache'].slice().sort() : [];
+  for (var i = 0; i < permanentCache.length; i++) {
+    manifest['CACHE'].insert(permanentCache[i]);
+  }
+
   function updateTimestamp(date) {
     if (date > manifest['TIMESTAMP']) {
       manifest['TIMESTAMP'] = date;
@@ -153,8 +158,11 @@ module.exports = function (paths, config) {
           }
         });
       } else if (evt === 'delete') {
-        if (manifest['CACHE'].remove(toUrl(evtPath))) {
-          updateListener(manifest);
+        var url = toUrl(evtPath);
+        if (permanentCache.indexOf(url) === -1) {
+          if (manifest['CACHE'].remove(url)) {
+            updateListener(manifest);
+          }
         }
       }
       fileListener(evt, evtPath);
