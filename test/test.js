@@ -294,6 +294,8 @@ describe('Initialization', function() {
 describe('Observe Changes', function() {
   var newFile = 'test/files/some_files/new_dir/1.txt';
   var newUrl = '/some/new_dir/1.txt';
+  var newFile2 = 'test/files/some_files/b.txt';
+  var newUrl2 = '/some/b.txt';
 
   function deleteTempFiles() {
     try {
@@ -313,6 +315,14 @@ describe('Observe Changes', function() {
         throw dirErr;
       }
     }
+    try {
+      fs.statSync(newFile2);
+      fs.unlinkSync(newFile2);
+    } catch (fileErr) {
+      if (fileErr.code !== 'ENOENT') {
+        throw fileErr;
+      }
+    }
   }
 
   before(deleteTempFiles);
@@ -327,6 +337,7 @@ describe('Observe Changes', function() {
       catchupDelay: 0,
       updateListener: manifestWatcher.listener,
       fileListener: fileWatcher.listener,
+      cache: [ newUrl2 ],
       readyCallback: function(s) {
         server = s;
         done();
@@ -408,5 +419,70 @@ describe('Observe Changes', function() {
     } catch (err) {
       done(err);
     }
+  });
+
+  it('Should always contain items explicitly added to the cache', function(done) {
+    getManifest(server, function(err, manifest) {
+      if (err) { return done(err); }
+      try {
+        assert(manifest['CACHE'].indexOf(newUrl2) !== -1, 'Explicitly cached file should be in manifest');
+        touch.sync(newFile2);
+        fileWatcher.wait('Timeout waiting for filesystem create event', function(err) {
+          if (err) { return done(err); }
+          fs.unlinkSync(newFile2);
+          fileWatcher.wait('Timeout waiting for filesystem delete event', function(err) {
+            if (err) { return done(err); }
+            getManifest(server, function(err, manifest) {
+              if (err) { return done(err); }
+              try {
+                assert(manifest['CACHE'].indexOf(newUrl2) !== -1, 'Explicitly cached file should be in manifest even after conflicting delete');
+                done();
+              } catch (err) {
+                done(err);
+              }
+            });
+          });
+        });
+      } catch(err) {
+        done(err);
+      }
+    });
+    //try {
+    //  fs.mkdirSync(path.dirname(newFile));
+    //  fileWatcher.wait('Timeout waiting for directory create event', function(err, evt, evtPath) {
+    //    if (err) { return done(err); }
+    //    fs.writeFileSync(newFile, 'TEXT');
+    //    manifestWatcher.wait('Timeout waiting for update after file creation', function(err, manifest) {
+    //      if (err) { return done(err); }
+    //      try {
+    //        assert(manifest['CACHE'].indexOf(newUrl) !== -1, 'Newly created file should be in manifest');
+    //        setTimeout(function() {  //Need to wait a second or the file modify time may be unchanged
+    //          touch.sync(newFile);
+    //          manifestWatcher.wait('Timeout waiting for update after file touch', function(err, manifest) {
+    //            if (err) { return done(err); }
+    //            fs.unlinkSync(newFile);
+    //            //Deleting a directory that is being watched in Windows crashes watchr!
+    //            if (! os.platform().startsWith('win')) {
+    //              fs.rmdirSync(path.dirname(newFile));
+    //            }
+    //            manifestWatcher.wait('Timeout waiting for update after file delete', function(err, manifest) {
+    //              if (err) { return done(err); }
+    //              try {
+    //                assert(manifest['CACHE'].indexOf(newUrl) === -1, 'Deleted file shouldn\'t be in manifest');
+    //                done();
+    //              } catch (err) {
+    //                done(err);
+    //              }
+    //            });
+    //          });
+    //        }, 1000);
+    //      } catch (err) {
+    //        done(err);
+    //      }
+    //    });
+    //  });
+    //} catch (err) {
+    //  done(err);
+    //}
   });
 });
