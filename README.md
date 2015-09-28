@@ -44,7 +44,8 @@ The second argument is an optional config object that supports the following (op
 * `updateListener`: Callback function called after every update to the manifest file. The callback gets one argument `(manifest)`, an object with `CACHE`, `FALLBACK`, `NETWORK`, `COMMENT`, and `TIMESTAMP` properties.
 * `fileListener`: Callback function called after every filesystem change in an observed directory, whether or not the change triggers a modification to the manifest file. The callback gets two arguments `(evt, evtPath)`. The first is `'update'`, `'create'`, or `'delete'`, and the second is the path to the file or directory.
 * `catchupDelay`: Number of milliseconds to wait after filesystem events during which things like the creation of editor temp files will be ignored (default: `500`) (see [watchr](https://github.com/bevry/watchr))
-* `network`: An array of strings to include in the `NETWORK:` portion of the manifest file. (default: `['*']`)
+* `cache`: An array of strings to explicitly include in the main `CACHE:` portion of the manifest file in addition to any files in observed directories. (default: `[]`)
+* `network`: An array of strings to include in the `NETWORK:` portion of the manifest file. (default: `['*']`)  
 * `fallback`: An array of strings to include in the `FALLBACK:` portion of the manifest file. (default: `[]`)
 
 ### return ###
