@@ -135,13 +135,16 @@ module.exports = function (paths, config) {
       }
 
       toUrl = function(filePath) {
-        var relPath = filePath.substr(baseFilePath.length);
-        if (relPath.startsWith(path.sep)) {
-          relPath = relPath.substr(path.sep.length);
-        }
-        //Convert to /'s for URL in case the filePath has \ separators
-        return baseUrlPath + '/' + path.posix.format(path.parse(relPath));
+        return baseUrlPath + '/' + filePath;
       }
+    }
+
+    function cleanPath(filePath) {
+      var relPath = filePath.substr(baseFilePath.length);
+      if (relPath.startsWith(path.sep)) {
+        relPath = relPath.substr(path.sep.length);
+      }
+      return path.posix.format(path.parse(relPath)); //Convert to /'s to be consistent in case the filePath has \ separators
     }
 
     var ignore = p['ignore'] instanceof RegExp ? p['ignore'] : /$./;  //If no ignore pattern is given, use one that matches nothing
@@ -149,7 +152,7 @@ module.exports = function (paths, config) {
     function onFile(filePath, stat) {
       if (filePath.match(ignore)) { return; }
       var newTimestamp = updateTimestamp(stat.mtime);
-      if (manifest['CACHE'].insert(toUrl(filePath)) || newTimestamp) {
+      if (manifest['CACHE'].insert(toUrl(cleanPath(filePath))) || newTimestamp) {
         updateListener(manifest);
       }
     }
@@ -173,7 +176,7 @@ module.exports = function (paths, config) {
           }
         });
       } else if (evt === 'delete') {
-        var url = toUrl(evtPath);
+        var url = toUrl(cleanPath(evtPath));
         if (permanentCache.indexOf(url) === -1) {
           if (manifest['CACHE'].remove(url)) {
             updateListener(manifest);
@@ -189,7 +192,7 @@ module.exports = function (paths, config) {
         scanner.scandir(baseFilePath, {
           fileAction: function(filePath, filename, next, stat) {
             if (! filePath.match(ignore)) {
-              manifest['CACHE'].insert(toUrl(filePath));
+              manifest['CACHE'].insert(toUrl(cleanPath(filePath)));
               updateTimestamp(stat.mtime);
             }
             next();
