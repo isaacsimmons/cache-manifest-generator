@@ -107,33 +107,44 @@ module.exports = function (paths, config) {
     var baseFilePath = p['file'];
     baseFilePath = path.format(path.parse(baseFilePath)); //Make sure filePath uses OS native separators
 
-    var baseUrlPath;
-    if (typeof p['url'] === 'string') {
-      baseUrlPath = p['url'] || p['file']
-    } else if (! path.isAbsolute(p['file'])) {
-      baseUrlPath = p['file'];
-    } else {
-      throw new Error('URL must be specified when an absolute file path is given: ' + p['file']);
-    }
+    var toUrl;
+    if (typeof p['rewrite'] === 'function') {
+      toUrl = p['rewrite'];
+    } else if (p['match'] instanceof RegExp && typeof p['rewrite'] === 'string') {
+      var rewritemMatch = p['match'];
+      var rewriteValue = p['rewrite'];
+      toUrl = function(filePath) {
+        return filePath.replace(rewritemMatch, rewriteValue);
+      };
+    } else { //No rewrite function provided,
+      var baseUrlPath;
+      if (typeof p['url'] === 'string') {
+        baseUrlPath = p['url'];
+      } else if (! path.isAbsolute(p['file'])) {
+        baseUrlPath = p['file'];
+      } else {
+        throw new Error('URL or Rewrite function must be specified when an absolute file path is given: ' + p['file']);
+      }
 
-    //Make sure URL starts with /  but doesn't contain a trailing /
-    if (! baseUrlPath.startsWith('/')) {
-      baseUrlPath = '/' + baseUrlPath;
-    }
-    if (baseUrlPath.endsWith('/')) {
-      baseUrlPath = baseUrlPath.substring(0, baseUrlPath.length - 1);
+      //Make sure URL starts with /  but doesn't contain a trailing /
+      if (! baseUrlPath.startsWith('/')) {
+        baseUrlPath = '/' + baseUrlPath;
+      }
+      if (baseUrlPath.endsWith('/')) {
+        baseUrlPath = baseUrlPath.substring(0, baseUrlPath.length - 1);
+      }
+
+      toUrl = function(filePath) {
+        var relPath = filePath.substr(baseFilePath.length);
+        if (relPath.startsWith(path.sep)) {
+          relPath = relPath.substr(path.sep.length);
+        }
+        //Convert to /'s for URL in case the filePath has \ separators
+        return baseUrlPath + '/' + path.posix.format(path.parse(relPath));
+      }
     }
 
     var ignore = p['ignore'] instanceof RegExp ? p['ignore'] : /$./;  //If no ignore pattern is given, use one that matches nothing
-
-    function toUrl(filePath) {
-      var relPath = filePath.substr(baseFilePath.length);
-      if (relPath.startsWith(path.sep)) {
-        relPath = relPath.substr(path.sep.length);
-      }
-      //Convert to /'s for URL in case the filePath has \ separators
-      return baseUrlPath + '/' + path.posix.format(path.parse(relPath));
-    }
 
     function onFile(filePath, stat) {
       if (filePath.match(ignore)) { return; }
