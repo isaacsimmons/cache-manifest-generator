@@ -104,8 +104,8 @@ module.exports = function (paths, config) {
     if (! ('file' in p)) {
       throw new Error('Path object must contain a "file" property');
     }
-    var baseFilePath = p['file'];
-    baseFilePath = path.format(path.parse(baseFilePath)); //Make sure filePath uses OS native separators
+
+    var baseFilePath = path.format(path.parse(p['file'])); //Make sure filePath uses OS native separators
 
     var toUrl;
     if (typeof p['rewrite'] === 'function') {
