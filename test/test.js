@@ -139,7 +139,8 @@ var CONFIG = [{
     url: 'some'
   }, {
     file: 'test/files/more_files',
-    url: 'files/more_files'
+    match: /^(.*).txt/,
+    rewrite: '/more/$1.html'
   }, {
     file: 'test/files/hello.txt',
     url: 'hello.txt'
@@ -158,8 +159,8 @@ var INITIAL_FILES = [
 
 var INITIAL_URLS = [
   '/hello.txt',
-  '/files/more_files/1.txt',
-  '/files/more_files/2.txt',
+  '/more/1.html',
+  '/more/2.html',
   '/some/a.txt',
   '/some/z.txt',
   '/some/nested/x.txt',
@@ -223,14 +224,16 @@ describe('Initialization', function() {
       configWithIgnores.push({
         file: CONFIG[i]['file'],
         url: CONFIG[i]['url'],
+        match: CONFIG[i]['match'],
+        rewrite: CONFIG[i]['rewrite'],
         ignore: /[x-z].txt/
       });
     }
 
     var filteredUrls = [
       '/hello.txt',
-      '/files/more_files/1.txt',
-      '/files/more_files/2.txt',
+      '/more/1.html',
+      '/more/2.html',
       '/some/a.txt'
     ];
 
@@ -255,7 +258,9 @@ describe('Initialization', function() {
     for (var i = 0; i < CONFIG.length; i++) {
       absolutePaths.push({
         file: path.resolve(process.cwd(), CONFIG[i]['file']),
-        url: CONFIG[i]['url']
+        url: CONFIG[i]['url'],
+        rewrite: CONFIG[i]['rewrite'],
+        match: CONFIG[i]['match']
       });
     }
 
