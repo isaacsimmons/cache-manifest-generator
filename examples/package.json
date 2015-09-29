@@ -1,6 +1,7 @@
 {
   "dependencies": {
+    "cache-manifest-generator": "..",
     "express": "3.x",
-    "cache-manifest-generator": ".."
+    "jade": "1.x"
   }
 }

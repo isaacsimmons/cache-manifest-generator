@@ -32,9 +32,17 @@ Finally, `Cache-Control: no-cache` headers should be sent along with all resourc
 The first argument must be an array containing one or more paths to include in the main CACHE portion of the manifest.
 Each path must be an object with a `file` property that specifies either a relative or an absolute path to a file or directory.
 If it is a directory, then any files contained within it (and its subdirectories, recursively) will be included.
-Additionally, each path may contain a `url` property that specifies where the files will be made available in the site.
-If the `file` path is relative and the `url` is omitted, they will be assumed to be the same.
-Finally, each path may contain an `ignore` property which, if it contains a RegExp, will omit any files matching this pattern from the results.
+However, each path may contain an `ignore` property that is a RegExp, and any files matching this pattern will be omitted from the results.
+
+Additionally, cache-manifest-middleware must be able to translate each file path into a URL.
+This can happen in one of four ways:
+
+* It may contain a `url` property that holds a string which specifies the base URL for any file in this path
+* It may contain a `rewrite` property that is a function which takes one argument, the relative file path and returns the URL
+* It may contain a `rewrite` property that is a string and a `match` property that is a RegExp such that 'filepath'.replace(match, rewrite) specifies the URL
+* If the `file` property was a relative path and no other method is specified (`url`, `rewrite`), then it will assume the URLs should start at the same pattern
+
+In each case, the file path has all separators normalized to `/` ahead of time regardless of platform and only includes the portion relative to the base file path.
 
 ### config ###
 
@@ -62,6 +70,8 @@ An example server using express and serving static content out of two different 
 
     var app = express();
 
+    app.set('view engine', 'jade');
+
     //Set Cache-Control: no-cache on all files served during development
     app.use(function(req, res, next) {
       res.set('Cache-Control', 'no-cache');
@@ -69,9 +79,14 @@ An example server using express and serving static content out of two different 
     });
 
     app.get('/cache.manifest', manifest([
-      { file: 'transpiler_output', url: '/js' },
-      { file: 'site', url: '/', ignore: /\.template/ }
-    ]));
+      { file: 'transpiler_output', url: '/js', ignore: /.*test.js/ },
+      { file: 'site', url: '/' },
+      { file: 'views', match: /^(.*).jade/, rewrite: '/$1.html'}
+     ]));
+
+    app.get('/index.html', function(req, res) {
+      res.render('index.jade');
+    });
 
     app.use(express.static('site'));
     app.use('/js', express.static('transpiler_output'));
