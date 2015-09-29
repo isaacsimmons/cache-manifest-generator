@@ -42,6 +42,12 @@ function sortedSet() {
     return false;
   };
 
+  arr.insertAll = function(vals) {
+    for (var i = 0; i < vals.length; i++) {
+      arr.insert(vals[i]);
+    }
+  };
+
   arr.remove = function(val) {
     var index = indexOf(val);
     if (index >= 0 && arr[index] === val) {
@@ -72,9 +78,7 @@ module.exports = function (paths, config) {
   };
 
   var permanentCache = Array.isArray(config['cache']) ? config['cache'].slice().sort() : [];
-  for (var i = 0; i < permanentCache.length; i++) {
-    manifest['CACHE'].insert(permanentCache[i]);
-  }
+  manifest['CACHE'].insertAll(permanentCache);
 
   function updateTimestamp(date) {
     if (date > manifest['TIMESTAMP']) {
