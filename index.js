@@ -69,6 +69,8 @@ module.exports = function (paths, config) {
   var updateListener = typeof config['updateListener'] === 'function' ? config['updateListener'] : function() {};
   var fileListener = typeof config['fileListener'] === 'function' ? config['fileListener'] : function() {};
   var catchupDelay = typeof config['catchupDelay'] === 'number' ? config['catchupDelay'] : 500;
+  var globalIgnore = config['ignore'] instanceof RegExp ? config['ignore'] : /$./;  //If no ignore pattern is given, use one that matches nothing
+  var permanentCache = Array.isArray(config['cache']) ? config['cache'].slice().sort() : [];
 
   var manifest = {
     CACHE: sortedSet(),
@@ -76,8 +78,6 @@ module.exports = function (paths, config) {
     FALLBACK: Array.isArray(config['fallback']) ? config['fallback'].slice() : [],
     TIMESTAMP: null
   };
-
-  var permanentCache = Array.isArray(config['cache']) ? config['cache'].slice().sort() : [];
   manifest['CACHE'].insertAll(permanentCache);
 
   function updateTimestamp(date) {
@@ -150,7 +150,7 @@ module.exports = function (paths, config) {
     var ignore = p['ignore'] instanceof RegExp ? p['ignore'] : /$./;  //If no ignore pattern is given, use one that matches nothing
 
     function onFile(filePath, stat) {
-      if (filePath.match(ignore)) { return; }
+      if (filePath.match(ignore) || filePath.match(globalIgnore)) { return; }
       var newTimestamp = updateTimestamp(stat.mtime);
       if (manifest['CACHE'].insert(toUrl(cleanPath(filePath))) || newTimestamp) {
         updateListener(manifest);
@@ -158,7 +158,7 @@ module.exports = function (paths, config) {
     }
 
     function listener(evt, evtPath) {
-      if (evtPath.match(ignore)) { return; }
+      if (evtPath.match(ignore) || evtPath.match(globalIgnore)) { return; }
       if (evt === 'create' || evt === 'update') {
         fs.stat(evtPath, function(err, stat) {
           if (err) { console.error(err); return; }
@@ -191,7 +191,7 @@ module.exports = function (paths, config) {
       if (stat.isDirectory()) {
         scanner.scandir(baseFilePath, {
           fileAction: function(filePath, filename, next, stat) {
-            if (! filePath.match(ignore)) {
+            if (! (filePath.match(ignore) || filePath.match(globalIgnore))) {
               manifest['CACHE'].insert(toUrl(cleanPath(filePath)));
               updateTimestamp(stat.mtime);
             }
@@ -203,8 +203,8 @@ module.exports = function (paths, config) {
           }
         });
       } else if (stat.isFile()) {
-        if (baseFilePath.match(ignore)) {
-          console.warn('Path ' + baseFilePath + ' points to a single file, but it is ignored by the pattern ' + ignore);
+        if (baseFilePath.match(ignore) || baseFilePath.match(globalIgnore)) {
+          console.warn('Path ' + baseFilePath + ' points to a single file, but it is ignored');
         } else {
           updateTimestamp(stat.mtime);
           manifest['CACHE'].insert(baseUrlPath);

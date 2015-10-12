@@ -55,6 +55,7 @@ The second argument is an optional config object that supports the following (op
 * `cache`: An array of strings to explicitly include in the main `CACHE:` portion of the manifest file in addition to any files in observed directories. (default: `[]`)
 * `network`: An array of strings to include in the `NETWORK:` portion of the manifest file. (default: `['*']`)
 * `fallback`: An array of strings to include in the `FALLBACK:` portion of the manifest file. (default: `[]`)
+* `ignore`: A RegExp which specifies files to not include in the cache portion of the manifest. This is used in conjunction with the per-path ignore option, and files matched by either will be omitted.
 
 ### return ###
 
